@@ -10,10 +10,66 @@ import com.smartspend.app.domain.repository.BudgetRepository
 import com.smartspend.app.domain.repository.CategoryRepository
 import com.smartspend.app.domain.repository.ExpenseRepository
 import com.smartspend.app.domain.repository.PaymentMethodRepository
+import com.smartspend.app.domain.model.Profile
+import com.smartspend.app.domain.repository.ProfileRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
 import java.math.BigDecimal
+
+class FakeProfileRepository : ProfileRepository {
+    val profiles = mutableListOf<Profile>()
+
+    override fun getAllProfiles(): Flow<List<Profile>> {
+        return MutableStateFlow(profiles)
+    }
+
+    override suspend fun getProfileById(id: String): Profile? {
+        return profiles.find { it.id == id }
+    }
+
+    override fun getProfileFlowById(id: String): Flow<Profile?> {
+        return MutableStateFlow(profiles.find { it.id == id })
+    }
+
+    override suspend fun createProfile(profile: Profile) {
+        profiles.add(profile)
+    }
+
+    override suspend fun updateProfile(profile: Profile) {
+        val index = profiles.indexOfFirst { it.id == profile.id }
+        if (index != -1) profiles[index] = profile
+    }
+
+    override suspend fun deleteProfile(id: String) {
+        profiles.removeAll { it.id == id }
+    }
+}
+
+class FakeBudgetRepository : BudgetRepository {
+    val budgets = mutableListOf<Budget>()
+    var overallBudgetOverride: Budget? = null
+
+    override fun getBudgets(profileId: String): Flow<List<Budget>> {
+        return MutableStateFlow(budgets.filter { it.profileId == profileId })
+    }
+
+    override suspend fun getBudget(profileId: String, type: BudgetType, categoryId: String?): Budget? {
+        return budgets.find { it.profileId == profileId && it.type == type && it.categoryId == categoryId }
+    }
+
+    override fun getOverallBudgetFlow(profileId: String, type: BudgetType): Flow<Budget?> {
+        return MutableStateFlow(overallBudgetOverride ?: budgets.find { it.profileId == profileId && it.type == type && it.categoryId == null })
+    }
+
+    override suspend fun upsertBudget(budget: Budget) {
+        val index = budgets.indexOfFirst { it.id == budget.id }
+        if (index != -1) budgets[index] = budget else budgets.add(budget)
+    }
+
+    override suspend fun deleteBudget(profileId: String, id: String) {
+        budgets.removeAll { it.profileId == profileId && it.id == id }
+    }
+}
 
 class FakeCategoryRepository : CategoryRepository {
     private val categories = mutableListOf<Category>()

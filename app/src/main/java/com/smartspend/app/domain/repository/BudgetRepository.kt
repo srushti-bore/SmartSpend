@@ -8,6 +8,7 @@ interface BudgetRepository {
     fun getBudgets(profileId: String): Flow<List<Budget>>
     suspend fun getBudget(profileId: String, type: BudgetType, categoryId: String?): Budget?
     fun getOverallBudgetFlow(profileId: String, type: BudgetType): Flow<Budget?>
+    fun getOverallBudget(profileId: String): Flow<Budget?> = getOverallBudgetFlow(profileId, BudgetType.MONTHLY)
     suspend fun upsertBudget(budget: Budget)
     suspend fun deleteBudget(profileId: String, id: String)
 }

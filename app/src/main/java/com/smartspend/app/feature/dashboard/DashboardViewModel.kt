@@ -3,15 +3,19 @@ package com.smartspend.app.feature.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.smartspend.app.core.datastore.PreferencesManager
+import com.smartspend.app.domain.intelligence.StreakManager
+import com.smartspend.app.domain.intelligence.StreakStatus
 import com.smartspend.app.domain.model.CashFlowSummary
 import com.smartspend.app.domain.model.Category
 import com.smartspend.app.domain.repository.CategoryRepository
+import com.smartspend.app.domain.repository.ExpenseRepository
 import com.smartspend.app.domain.repository.ProfileRepository
 import com.smartspend.app.domain.usecase.dashboard.DashboardSummary
 import com.smartspend.app.domain.usecase.dashboard.GetDashboardSummaryUseCase
 import com.smartspend.app.domain.usecase.export.ExportTransactionsUseCase
 import com.smartspend.app.domain.usecase.income.GetCashFlowSummaryUseCase
 import com.smartspend.app.domain.usecase.recurring.CalculateRecurringCommitmentsUseCase
+import com.smartspend.app.domain.usecase.demo.SeedDemoDataUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,8 +36,11 @@ data class DashboardUiState(
     val cashFlow: CashFlowSummary? = null,
     val recurringCommitment: BigDecimal = BigDecimal.ZERO,
     val categoriesMap: Map<String, Category> = emptyMap(),
+    val streakStatus: StreakStatus? = null,
     val isExportDialogOpen: Boolean = false,
     val isLoading: Boolean = true,
+    val isSeedingData: Boolean = false,
+    val toastMessage: String? = null,
     val errorMessage: String? = null
 )
 
@@ -43,13 +50,49 @@ class DashboardViewModel @Inject constructor(
     private val getCashFlowSummaryUseCase: GetCashFlowSummaryUseCase,
     private val calculateRecurringCommitmentsUseCase: CalculateRecurringCommitmentsUseCase,
     val exportTransactionsUseCase: ExportTransactionsUseCase,
+    private val seedDemoDataUseCase: SeedDemoDataUseCase,
     private val profileRepository: ProfileRepository,
     private val categoryRepository: CategoryRepository,
+    private val expenseRepository: ExpenseRepository,
+    private val streakManager: StreakManager,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    fun seedDemoData(onComplete: (Int) -> Unit = {}) {
+        val profileId = _uiState.value.activeProfileId
+        if (profileId.isEmpty()) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSeedingData = true) }
+            val result = seedDemoDataUseCase(profileId)
+            result.fold(
+                onSuccess = { count ->
+                    _uiState.update {
+                        it.copy(
+                            isSeedingData = false,
+                            toastMessage = "Successfully added $count demo financial records!"
+                        )
+                    }
+                    onComplete(count)
+                },
+                onFailure = { err ->
+                    _uiState.update {
+                        it.copy(
+                            isSeedingData = false,
+                            errorMessage = "Failed to load demo data: ${err.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun clearToastMessage() {
+        _uiState.update { it.copy(toastMessage = null) }
+    }
 
     init {
         observeDashboard()
@@ -118,6 +161,19 @@ class DashboardViewModel @Inject constructor(
                 }
             }.collect { commitment ->
                 _uiState.update { it.copy(recurringCommitment = commitment) }
+            }
+        }
+
+        viewModelScope.launch {
+            preferencesManager.activeProfileIdFlow.flatMapLatest { profileId ->
+                if (profileId != null) {
+                    expenseRepository.getAllExpenses(profileId)
+                } else {
+                    flowOf(emptyList())
+                }
+            }.collect { expenses ->
+                val streak = streakManager.calculateStreak(expenses)
+                _uiState.update { it.copy(streakStatus = streak) }
             }
         }
     }

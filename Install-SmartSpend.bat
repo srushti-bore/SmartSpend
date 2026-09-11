@@ -15,7 +15,7 @@ echo [1/3] Checking connected Android devices...
 echo.
 
 echo [2/3] Installing SmartSpend Debug APK...
-%ADB% install -r "%~dp0app\build\outputs\apk\debug\app-debug.apk"
+%ADB% install -r -t -g "%~dp0app\build\outputs\apk\debug\app-debug.apk"
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Installation failed. Please ensure your phone is unlocked and USB Debugging is authorized.
     pause

@@ -25,6 +25,12 @@ class SmartSpendApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        try {
+            System.loadLibrary("sqlcipher")
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to load sqlcipher native library")
+        }
+
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }

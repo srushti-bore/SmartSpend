@@ -117,6 +117,14 @@ fun AddEditExpenseScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Duplicate Warning Banner
+            if (!state.duplicateWarning.isNullOrBlank()) {
+                com.smartspend.app.core.ui.components.DuplicateWarningBanner(
+                    warningMessage = state.duplicateWarning
+                )
+                Spacer(modifier = Modifier.height(14.dp))
+            }
+
             // Amount Field
             OutlinedTextField(
                 value = state.amountInput,

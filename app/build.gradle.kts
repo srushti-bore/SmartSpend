@@ -123,8 +123,23 @@ dependencies {
     implementation("androidx.glance:glance-appwidget:1.0.0")
     implementation("androidx.glance:glance-material3:1.0.0")
 
+    // CameraX (Assisted Capture / OCR)
+    val cameraxVersion = "1.3.1"
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+
+    // ML Kit Text Recognition (On-device OCR)
+    implementation("com.google.mlkit:text-recognition:16.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
+
+    // Coil Image Loading (Receipt Preview)
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20231013")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
     testImplementation("app.cash.turbine:turbine:1.0.0")
     testImplementation("androidx.room:room-testing:$roomVersion")

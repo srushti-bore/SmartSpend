@@ -5,14 +5,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.smartspend.app.core.datastore.PreferencesManager
 import com.smartspend.app.core.money.MoneyUtils
+import com.smartspend.app.domain.assisted.SmartCategorySuggester
 import com.smartspend.app.domain.model.Category
 import com.smartspend.app.domain.model.Expense
+import com.smartspend.app.domain.model.ExpenseSource
 import com.smartspend.app.domain.model.PaymentMethod
 import com.smartspend.app.domain.repository.CategoryRepository
 import com.smartspend.app.domain.repository.ExpenseRepository
 import com.smartspend.app.domain.repository.PaymentMethodRepository
 import com.smartspend.app.domain.usecase.expense.AddExpenseUseCase
 import com.smartspend.app.domain.usecase.expense.DeleteExpenseUseCase
+import com.smartspend.app.domain.usecase.expense.DuplicateGuardUseCase
 import com.smartspend.app.domain.usecase.expense.EditExpenseUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,9 +36,11 @@ data class AddEditExpenseUiState(
     val date: Long = System.currentTimeMillis(),
     val notes: String = "",
     val isRecurring: Boolean = false,
+    val source: ExpenseSource = ExpenseSource.MANUAL,
     val categories: List<Category> = emptyList(),
     val paymentMethods: List<PaymentMethod> = emptyList(),
     val currency: String = "INR",
+    val duplicateWarning: String? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val isSaved: Boolean = false,
@@ -48,6 +53,8 @@ class AddEditExpenseViewModel @Inject constructor(
     private val addExpenseUseCase: AddExpenseUseCase,
     private val editExpenseUseCase: EditExpenseUseCase,
     private val deleteExpenseUseCase: DeleteExpenseUseCase,
+    private val duplicateGuardUseCase: DuplicateGuardUseCase,
+    private val categorySuggester: SmartCategorySuggester,
     private val expenseRepository: ExpenseRepository,
     private val categoryRepository: CategoryRepository,
     private val paymentMethodRepository: PaymentMethodRepository,
@@ -55,7 +62,21 @@ class AddEditExpenseViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val expenseIdArg: String? = savedStateHandle.get<String>("expenseId")
-    private val _uiState = MutableStateFlow(AddEditExpenseUiState(expenseId = expenseIdArg, isEditMode = expenseIdArg != null))
+    private val prefillTitle: String? = savedStateHandle.get<String>("prefillTitle")
+    private val prefillAmount: String? = savedStateHandle.get<String>("prefillAmount")
+    private val prefillNotes: String? = savedStateHandle.get<String>("prefillNotes")
+    private val prefillDate: Long? = savedStateHandle.get<Long>("prefillDate")
+
+    private val _uiState = MutableStateFlow(
+        AddEditExpenseUiState(
+            expenseId = expenseIdArg,
+            isEditMode = expenseIdArg != null,
+            title = prefillTitle ?: "",
+            amountInput = prefillAmount ?: "",
+            notes = prefillNotes ?: "",
+            date = if (prefillDate != null && prefillDate > 0) prefillDate else System.currentTimeMillis()
+        )
+    )
     val uiState: StateFlow<AddEditExpenseUiState> = _uiState.asStateFlow()
 
     private var activeProfileId: String? = null
@@ -73,10 +94,18 @@ class AddEditExpenseViewModel @Inject constructor(
             val paymentMethods = paymentMethodRepository.getPaymentMethods(profileId).firstOrNull() ?: emptyList()
             val preferredCurrency = preferencesManager.preferredCurrencyFlow.firstOrNull() ?: "INR"
 
+            var initialCategoryId = _uiState.value.selectedCategoryId
+            if (initialCategoryId == null && _uiState.value.title.isNotBlank()) {
+                val suggested = categorySuggester.suggestCategory(_uiState.value.title, categories)
+                initialCategoryId = suggested?.id ?: categories.firstOrNull()?.id
+            } else if (initialCategoryId == null) {
+                initialCategoryId = categories.firstOrNull()?.id
+            }
+
             _uiState.value = _uiState.value.copy(
                 categories = categories,
                 paymentMethods = paymentMethods,
-                selectedCategoryId = _uiState.value.selectedCategoryId ?: categories.firstOrNull()?.id,
+                selectedCategoryId = initialCategoryId,
                 selectedPaymentMethodId = _uiState.value.selectedPaymentMethodId ?: paymentMethods.firstOrNull()?.id,
                 currency = preferredCurrency
             )
@@ -92,19 +121,29 @@ class AddEditExpenseViewModel @Inject constructor(
                         date = expense.date,
                         notes = expense.notes ?: "",
                         isRecurring = expense.isRecurring,
+                        source = expense.source,
                         currency = expense.currency
                     )
                 }
             }
+
+            checkDuplicate()
         }
     }
 
     fun onTitleChange(title: String) {
         _uiState.value = _uiState.value.copy(title = title, errorMessage = null)
+        // Auto-suggest category if user hasn't explicitly set one or when title matches strongly
+        val suggested = categorySuggester.suggestCategory(title, _uiState.value.categories)
+        if (suggested != null) {
+            _uiState.value = _uiState.value.copy(selectedCategoryId = suggested.id)
+        }
+        checkDuplicate()
     }
 
     fun onAmountChange(amount: String) {
         _uiState.value = _uiState.value.copy(amountInput = amount, errorMessage = null)
+        checkDuplicate()
     }
 
     fun onCategorySelect(categoryId: String) {
@@ -117,6 +156,7 @@ class AddEditExpenseViewModel @Inject constructor(
 
     fun onDateChange(date: Long) {
         _uiState.value = _uiState.value.copy(date = date)
+        checkDuplicate()
     }
 
     fun onNotesChange(notes: String) {
@@ -125,6 +165,30 @@ class AddEditExpenseViewModel @Inject constructor(
 
     fun onRecurringToggle(isRecurring: Boolean) {
         _uiState.value = _uiState.value.copy(isRecurring = isRecurring)
+    }
+
+    private fun checkDuplicate() {
+        val profileId = activeProfileId ?: return
+        val state = _uiState.value
+        val parsedAmount = MoneyUtils.parse(state.amountInput)
+
+        if (parsedAmount == null || parsedAmount <= BigDecimal.ZERO || state.title.isBlank()) {
+            _uiState.value = state.copy(duplicateWarning = null)
+            return
+        }
+
+        viewModelScope.launch {
+            val result = duplicateGuardUseCase(
+                profileId = profileId,
+                title = state.title,
+                amount = parsedAmount,
+                date = state.date,
+                excludeExpenseId = state.expenseId
+            )
+            _uiState.value = _uiState.value.copy(
+                duplicateWarning = if (result.isDuplicate) result.warningMessage else null
+            )
+        }
     }
 
     fun save() {
@@ -180,7 +244,8 @@ class AddEditExpenseViewModel @Inject constructor(
                     paymentMethodId = paymentMethodId,
                     date = state.date,
                     notes = state.notes,
-                    isRecurring = state.isRecurring
+                    isRecurring = state.isRecurring,
+                    source = state.source
                 )
             }
 
