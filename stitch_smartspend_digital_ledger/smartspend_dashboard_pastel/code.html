@@ -1,0 +1,334 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SmartSpend - Daily Ledger</title>
+<!-- Fonts: Fraunces & IBM Plex Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&amp;family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&amp;family=Poppins:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "porcelain": "#FBFBF9",
+          "surface-soft": "#F4F3EE",
+          "surface-tint": "#EAE8E0",
+          "charcoal": "#1C2024",
+          "ink-muted": "#686E78",
+          "hairline": "#E5E3DC",
+          "hairline-subtle": "#EDECE6",
+          "pastel-amber": "#D49B42",
+          "pastel-amber-light": "#F7EEDB",
+          "pastel-blue": "#536B88",
+          "pastel-blue-light": "#E9EFF6",
+          "pastel-coral": "#D96B58",
+          "pastel-coral-light": "#FAECE9",
+          "pastel-sage": "#5E8B76",
+          "pastel-sage-light": "#E7F1EC"
+        },
+        "fontFamily": {
+          "fraunces": ["Fraunces", "serif"],
+          "sans": ["IBM Plex Sans", "sans-serif"]
+        }
+      },
+    },
+  }
+</script>
+<style>
+    body {
+      background-color: #FBFBF9;
+      color: #1C2024;
+      font-family: "IBM Plex Sans", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: max(884px, 100dvh);
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1;
+    }
+    /* Delicate Hairline Double Rule */
+    .ledger-double-rule {
+      border-top: 1px solid #E5E3DC;
+      border-bottom: 1px solid #E5E3DC;
+      height: 3px;
+    }
+    /* SVG Dash Animation for Progress Arc */
+    @keyframes strokeFill {
+      from {
+        stroke-dashoffset: 440;
+      }
+      to {
+        stroke-dashoffset: 154; /* 65% remaining */
+      }
+    }
+    .animate-progress-ring {
+      stroke-dasharray: 440;
+      stroke-dashoffset: 440;
+      animation: strokeFill 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+</style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-pastel-amber-light selection:text-charcoal">
+<!-- TopAppBar: Clean Ivory / Porcelain Minimal Navigation -->
+<header class="bg-porcelain/90 backdrop-blur-md border-b border-hairline sticky top-0 z-40">
+<div class="flex justify-between items-center w-full px-6 py-4 max-w-4xl mx-auto">
+<div class="flex items-center space-x-3">
+<div class="w-7 h-7 rounded-sm overflow-hidden flex items-center justify-center border border-hairline/60 shadow-xs"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpVhARgsAgaw-sLpthqK7wBhGhDecBJLPklO8qFzaNgx1jPurXBSMJ63lAgaOmQhnNmTVnOQZrrnAwiCiLAGz20POFixDH7OTyvxj4j9aolR8KOt30BaK9zpnAgiwkg5FdH-hycR9ytQCRxEAe-G4K8GZBkRBtu6GVIjdBbTHqfv0lp6r-qv8xptFEcMTe0hZuzcJXmbnRBRadJ3Pc47jXPVzJycQDwHX3HKGFcmMhOgQtGoHP6Vhkcw" alt="SmartSpend App Logo" class="w-full h-full object-cover rounded-sm"></div>
+<span class="font-fraunces text-2xl font-medium tracking-tight text-charcoal">SmartSpend</span>
+</div>
+<!-- Responsive Web Navigation Cluster -->
+<nav class="hidden md:flex items-center space-x-8">
+<a class="text-charcoal font-medium text-xs tracking-wider uppercase border-b border-charcoal pb-0.5" href="#ledger">Ledger</a>
+<a class="text-ink-muted text-xs tracking-wider uppercase hover:text-charcoal transition-colors pb-0.5" href="#budgets">Budgets</a>
+<a class="text-ink-muted text-xs tracking-wider uppercase hover:text-charcoal transition-colors pb-0.5" href="#scan">Scan</a>
+<a class="text-ink-muted text-xs tracking-wider uppercase hover:text-charcoal transition-colors pb-0.5" href="#history">History</a>
+</nav>
+<div class="flex items-center space-x-3">
+<button aria-label="Connected Institution" class="p-1.5 text-ink-muted hover:text-charcoal hover:bg-surface-soft rounded-md transition-colors active:opacity-80">
+<span class="material-symbols-outlined text-xl" data-icon="account_balance">account_balance</span>
+</button>
+<!-- Profile Monogram Tag -->
+<div class="w-8 h-8 rounded-full border border-hairline flex items-center justify-center bg-surface-soft text-charcoal text-xs font-semibold tracking-wider">
+        AK
+      </div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas: Spacious, Airy Porcelain Layout -->
+<main class="flex-1 w-full max-w-3xl mx-auto px-6 pt-10 pb-32">
+<!-- Screen Sub-Header & Date Ribbon -->
+<div class="flex items-baseline justify-between border-b border-hairline pb-4 mb-10">
+<div>
+<p class="text-[11px] font-semibold tracking-[0.14em] uppercase text-ink-muted">Thursday, Oct 24</p>
+<h1 class="font-fraunces text-3xl font-medium text-charcoal mt-1 tracking-tight">Daily Ledger</h1>
+</div>
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-pastel-sage-light text-pastel-sage">
+<span class="material-symbols-outlined text-sm font-semibold" data-icon="verified_user">verified_user</span>
+<span class="text-[10px] font-semibold tracking-wider uppercase">Reconciled 08:30 AM</span>
+</div>
+</div>
+<!-- Monumental Focal Section: Airy Safe-to-Spend Progress Gauge -->
+<section aria-label="Safe-to-Spend Progress" class="flex flex-col items-center justify-center py-6 mb-8">
+<div class="relative w-64 h-64 flex items-center justify-center">
+<!-- Soft subtle circular fill behind the gauge -->
+<div class="absolute inset-4 rounded-full bg-surface-soft/80 -z-10 shadow-sm border border-hairline-subtle"></div>
+<!-- SVG Gauge: Delicate Track + Pastel Amber Arc -->
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 160 160">
+<!-- Background delicate track -->
+<circle cx="80" cy="80" fill="transparent" r="68" stroke="#EAE8E0" stroke-width="3"></circle>
+<!-- Progress Stroke in Soft Amber -->
+<circle class="animate-progress-ring" cx="80" cy="80" fill="transparent" r="68" stroke="#D49B42" stroke-linecap="round" stroke-width="5.5"></circle>
+</svg>
+<!-- Centered Metric Hierarchy -->
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+<span class="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">Daily Safe-to-Spend</span>
+<span class="font-fraunces text-5xl font-light text-charcoal tracking-tight mt-1 mb-1">
+          $42.50
+        </span>
+<span class="text-xs text-ink-muted">
+          Remaining of <span class="text-xs font-semibold text-charcoal">$65.00</span> limit
+        </span>
+</div>
+</div>
+<!-- Quick Ledger Ratio Metadata with Generous Padding -->
+<div class="grid grid-cols-2 gap-8 w-full max-w-sm mt-8 pt-5 border-t border-hairline">
+<div class="text-left">
+<p class="text-[11px] font-semibold tracking-wider uppercase text-ink-muted">Today's Debits</p>
+<p class="font-fraunces text-2xl font-normal text-charcoal mt-0.5">
+          $22.50 <span class="font-sans text-[11px] font-medium text-ink-muted tracking-wider">DR</span>
+</p>
+</div>
+<div class="text-right">
+<p class="text-[11px] font-semibold tracking-wider uppercase text-ink-muted">Carryover Surplus</p>
+<p class="font-fraunces text-2xl font-normal text-pastel-sage mt-0.5">
+          +$14.20 <span class="font-sans text-[11px] font-medium text-pastel-sage tracking-wider">CR</span>
+</p>
+</div>
+</div>
+</section>
+<!-- Editorial Double Hairline Separator -->
+<div class="ledger-double-rule my-10"></div>
+<!-- Spending Trend: 7-Day Rhythm with Uncrowded Bars -->
+<section aria-label="Seven-day spend analysis" class="mb-14">
+<div class="flex items-center justify-between mb-6">
+<span class="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">Seven-Day Disbursement Rhythm</span>
+<span class="text-xs font-medium text-pastel-blue bg-pastel-blue-light/70 px-2.5 py-0.5 rounded-full">Avg. $38.40/day</span>
+</div>
+<!-- Generously Spaced Bar Chart on Subtle Tint Canvas -->
+<div class="bg-surface-soft/60 border border-hairline rounded-lg p-5 pt-8">
+<div class="grid grid-cols-7 gap-3 md:gap-4 items-end h-28 px-2">
+<!-- Fri -->
+<div class="flex flex-col items-center h-full justify-end group cursor-default">
+<span class="text-[11px] font-medium text-ink-muted mb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">$45</span>
+<div class="w-full max-w-[28px] rounded-t-sm bg-pastel-blue/70 hover:bg-pastel-blue transition-colors" style="height: 60%;"></div>
+<span class="text-[11px] font-medium text-ink-muted mt-2.5">18 F</span>
+</div>
+<!-- Sat -->
+<div class="flex flex-col items-center h-full justify-end group cursor-default">
+<span class="text-[11px] font-medium text-ink-muted mb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">$62</span>
+<div class="w-full max-w-[28px] rounded-t-sm bg-pastel-blue/70 hover:bg-pastel-blue transition-colors" style="height: 85%;"></div>
+<span class="text-[11px] font-medium text-ink-muted mt-2.5">19 S</span>
+</div>
+<!-- Sun -->
+<div class="flex flex-col items-center h-full justify-end group cursor-default">
+<span class="text-[11px] font-medium text-ink-muted mb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">$28</span>
+<div class="w-full max-w-[28px] rounded-t-sm bg-pastel-blue/70 hover:bg-pastel-blue transition-colors" style="height: 38%;"></div>
+<span class="text-[11px] font-medium text-ink-muted mt-2.5">20 S</span>
+</div>
+<!-- Mon -->
+<div class="flex flex-col items-center h-full justify-end group cursor-default">
+<span class="text-[11px] font-medium text-ink-muted mb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">$35</span>
+<div class="w-full max-w-[28px] rounded-t-sm bg-pastel-blue/70 hover:bg-pastel-blue transition-colors" style="height: 48%;"></div>
+<span class="text-[11px] font-medium text-ink-muted mt-2.5">21 M</span>
+</div>
+<!-- Tue -->
+<div class="flex flex-col items-center h-full justify-end group cursor-default">
+<span class="text-[11px] font-medium text-ink-muted mb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">$52</span>
+<div class="w-full max-w-[28px] rounded-t-sm bg-pastel-blue/70 hover:bg-pastel-blue transition-colors" style="height: 72%;"></div>
+<span class="text-[11px] font-medium text-ink-muted mt-2.5">22 T</span>
+</div>
+<!-- Wed -->
+<div class="flex flex-col items-center h-full justify-end group cursor-default">
+<span class="text-[11px] font-medium text-ink-muted mb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">$31</span>
+<div class="w-full max-w-[28px] rounded-t-sm bg-pastel-blue/70 hover:bg-pastel-blue transition-colors" style="height: 42%;"></div>
+<span class="text-[11px] font-medium text-ink-muted mt-2.5">23 W</span>
+</div>
+<!-- Today (Thu) Active Marker in Amber -->
+<div class="flex flex-col items-center h-full justify-end group cursor-default">
+<span class="text-[11px] font-semibold text-pastel-amber mb-1.5">$22</span>
+<div class="w-full max-w-[28px] rounded-t-sm bg-pastel-amber shadow-sm transition-all" style="height: 34%;"></div>
+<span class="text-[11px] font-bold text-pastel-amber mt-2.5">24 T</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Recent Expenses: Ruled Ledger Table with Airy Spacing -->
+<section aria-label="Recent Ledger Entries" class="mb-8">
+<div class="flex items-center justify-between pb-3 border-b border-hairline">
+<h2 class="font-fraunces text-2xl font-medium text-charcoal">Recent Vouchers</h2>
+<span class="text-[10px] font-medium text-ink-muted tracking-wider uppercase bg-surface-soft px-2 py-0.5 rounded">Ledger Folio No. 412</span>
+</div>
+<!-- Ledger Column Headers -->
+<div class="grid grid-cols-12 py-3 text-ink-muted border-b border-hairline-subtle text-[11px] font-medium tracking-wider uppercase">
+<div class="col-span-1">Tag</div>
+<div class="col-span-5">Particulars</div>
+<div class="col-span-3 text-left">Audit Status</div>
+<div class="col-span-3 text-right">Disbursement</div>
+</div>
+<!-- Entry Row 1 -->
+<div class="grid grid-cols-12 items-center py-4 border-b border-hairline hover:bg-surface-soft/60 px-1 rounded-sm transition-colors duration-150">
+<div class="col-span-1">
+<div class="w-8 h-8 rounded-full bg-pastel-blue-light flex items-center justify-center text-pastel-blue">
+<span class="material-symbols-outlined text-base" data-icon="local_cafe">local_cafe</span>
+</div>
+</div>
+<div class="col-span-5 pr-3 pl-1">
+<p class="font-medium text-sm text-charcoal leading-snug">Artisan Roast Works</p>
+<p class="text-xs text-ink-muted mt-0.5">08:14 AM • Food &amp; Provisions</p>
+</div>
+<div class="col-span-3 flex items-center space-x-1.5 text-pastel-sage">
+<span class="material-symbols-outlined text-base fill" data-icon="check_circle">check_circle</span>
+<span class="text-xs font-medium">On track</span>
+</div>
+<div class="col-span-3 text-right">
+<span class="font-fraunces text-lg text-charcoal font-normal">↓ $4.75</span>
+<span class="text-[10px] font-medium text-ink-muted ml-0.5">DR</span>
+</div>
+</div>
+<!-- Entry Row 2 -->
+<div class="grid grid-cols-12 items-center py-4 border-b border-hairline hover:bg-surface-soft/60 px-1 rounded-sm transition-colors duration-150">
+<div class="col-span-1">
+<div class="w-8 h-8 rounded-full bg-pastel-blue-light flex items-center justify-center text-pastel-blue">
+<span class="material-symbols-outlined text-base" data-icon="tram">tram</span>
+</div>
+</div>
+<div class="col-span-5 pr-3 pl-1">
+<p class="font-medium text-sm text-charcoal leading-snug">Metropolitan Transit Rail</p>
+<p class="text-xs text-ink-muted mt-0.5">09:05 AM • Commute &amp; Freight</p>
+</div>
+<div class="col-span-3 flex items-center space-x-1.5 text-pastel-sage">
+<span class="material-symbols-outlined text-base fill" data-icon="check_circle">check_circle</span>
+<span class="text-xs font-medium">On track</span>
+</div>
+<div class="col-span-3 text-right">
+<span class="font-fraunces text-lg text-charcoal font-normal">↓ $2.75</span>
+<span class="text-[10px] font-medium text-ink-muted ml-0.5">DR</span>
+</div>
+</div>
+<!-- Entry Row 3 -->
+<div class="grid grid-cols-12 items-center py-4 border-b border-hairline hover:bg-surface-soft/60 px-1 rounded-sm transition-colors duration-150">
+<div class="col-span-1">
+<div class="w-8 h-8 rounded-full bg-pastel-coral-light flex items-center justify-center text-pastel-coral">
+<span class="material-symbols-outlined text-base" data-icon="shopping_bag">shopping_bag</span>
+</div>
+</div>
+<div class="col-span-5 pr-3 pl-1">
+<p class="font-medium text-sm text-charcoal leading-snug">Merchant Stationery Co.</p>
+<p class="text-xs text-ink-muted mt-0.5">01:20 PM • Office Supplies</p>
+</div>
+<div class="col-span-3 flex items-center space-x-1.5 text-pastel-coral">
+<span class="material-symbols-outlined text-base fill" data-icon="warning">warning</span>
+<span class="text-xs font-medium">Near limit</span>
+</div>
+<div class="col-span-3 text-right">
+<span class="font-fraunces text-lg text-charcoal font-normal">↓ $15.00</span>
+<span class="text-[10px] font-medium text-ink-muted ml-0.5">DR</span>
+</div>
+</div>
+<!-- Ledger Footing Close Line -->
+<div class="ledger-double-rule mt-5"></div>
+<!-- Ledger Reconcile Action -->
+<div class="flex justify-between items-center pt-4 text-ink-muted">
+<span class="text-xs italic">Showing 3 of 18 records this fiscal period</span>
+<button class="text-xs font-medium text-pastel-blue hover:text-charcoal underline underline-offset-2 transition-colors duration-150">
+        Inspect Historical Repertoire →
+      </button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar: Airy porcelain glass dock with central pastel amber floating action -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2.5 bg-porcelain/95 backdrop-blur-md border-t border-hairline md:hidden">
+<!-- Tab 1: Ledger -->
+<a class="flex flex-col items-center justify-center text-charcoal font-medium text-[10px] uppercase tracking-wider p-1.5 active:scale-95 transition-transform" href="#ledger">
+<span class="material-symbols-outlined text-xl" data-icon="book" style="font-variation-settings: 'FILL' 1;">book</span>
+<span class="mt-0.5 font-semibold">Ledger</span>
+</a>
+<!-- Tab 2: Budgets -->
+<a class="flex flex-col items-center justify-center text-ink-muted hover:text-charcoal font-medium text-[10px] uppercase tracking-wider p-1.5 active:scale-95 transition-transform" href="#budgets">
+<span class="material-symbols-outlined text-xl" data-icon="pie_chart">pie_chart</span>
+<span class="mt-0.5">Budgets</span>
+</a>
+<!-- Primary Central Action Button: Airy Pastel Amber Seal -->
+<div class="flex items-center justify-center -mt-6">
+<button aria-label="Enter New Ledger Record" class="w-13 h-13 p-3.5 bg-pastel-amber hover:bg-pastel-amber/90 text-white rounded-full flex items-center justify-center shadow-md border-2 border-porcelain active:scale-95 transition-all">
+<span class="material-symbols-outlined text-2xl font-semibold leading-none" data-icon="add">add</span>
+</button>
+</div>
+<!-- Tab 3: Scan -->
+<a class="flex flex-col items-center justify-center text-ink-muted hover:text-charcoal font-medium text-[10px] uppercase tracking-wider p-1.5 active:scale-95 transition-transform" href="#scan">
+<span class="material-symbols-outlined text-xl" data-icon="document_scanner">document_scanner</span>
+<span class="mt-0.5">Scan</span>
+</a>
+<!-- Tab 4: History -->
+<a class="flex flex-col items-center justify-center text-ink-muted hover:text-charcoal font-medium text-[10px] uppercase tracking-wider p-1.5 active:scale-95 transition-transform" href="#history">
+<span class="material-symbols-outlined text-xl" data-icon="history">history</span>
+<span class="mt-0.5">History</span>
+</a>
+</nav>
+
+
+<style>.font-fraunces { font-family: 'Instrument Serif', Georgia, serif !important; letter-spacing: 0.01em; }</style>
+
+</body></html>

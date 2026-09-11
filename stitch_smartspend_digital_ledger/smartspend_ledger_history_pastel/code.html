@@ -1,0 +1,466 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>General Ledger - SmartSpend</title>
+<!-- Google Fonts: IBM Plex Sans & Newsreader & Fraunces for authentic editorial stationer ledger feeling -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;500;600;700&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&amp;family=Poppins:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary": "#1F2429",
+            "on-primary": "#ffffff",
+            "surface": "#FAF9F6",
+            "on-surface": "#1F2429",
+            "on-surface-variant": "#696E75",
+            "surface-chalk": "#F4F3EF",
+            "surface-container": "#F2F0EB",
+            "surface-container-low": "#F7F6F2",
+            "surface-container-high": "#ECE9E2",
+            "outline": "#75777B",
+            "outline-variant": "#E7E5DD",
+            "border-hairline": "#E7E5DD",
+            "pastel-blue": "#EBF2FA",
+            "pastel-blue-text": "#3B5A80",
+            "pastel-blue-border": "#D5E2F1",
+            "pastel-blush": "#FDECEF",
+            "pastel-blush-text": "#A84357",
+            "pastel-blush-border": "#F8D1D9",
+            "pastel-amber": "#FBF3DE",
+            "pastel-amber-text": "#876011",
+            "pastel-amber-border": "#F3E3BC",
+            "pastel-sage": "#EDF4EE",
+            "pastel-sage-text": "#3D6E50",
+            "pastel-sage-border": "#D5E5D8",
+            "error": "#C24343"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "space-md": "1rem",
+            "margin-tablet": "2rem",
+            "margin": "1.25rem",
+            "margin-desktop": "3rem",
+            "space-xl": "2.5rem",
+            "space-lg": "1.5rem",
+            "gutter-desktop": "2rem",
+            "gutter-tablet": "1.5rem",
+            "gutter": "1rem"
+          },
+          "fontFamily": {
+            "title-lg": ["IBM Plex Sans", "sans-serif"],
+            "headline-lg": ["Fraunces", "serif"],
+            "body-lg": ["IBM Plex Sans", "sans-serif"],
+            "body-md": ["IBM Plex Sans", "sans-serif"],
+            "headline-md": ["Fraunces", "serif"],
+            "label-sm": ["IBM Plex Sans", "sans-serif"],
+            "display-lg": ["Fraunces", "serif"],
+            "headline-sm": ["Fraunces", "serif"],
+            "display-lg-mobile": ["Fraunces", "serif"],
+            "body-sm": ["IBM Plex Sans", "sans-serif"],
+            "label-md": ["IBM Plex Sans", "sans-serif"],
+            "title-md": ["IBM Plex Sans", "sans-serif"],
+            "label-lg": ["IBM Plex Sans", "sans-serif"],
+            "serif-display": ["Fraunces", "serif"]
+          },
+          "fontSize": {
+            "title-lg": ["18px", {"lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "body-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+            "headline-md": ["26px", {"lineHeight": "34px", "fontWeight": "500"}],
+            "label-sm": ["11px", {"lineHeight": "15px", "letterSpacing": "0.08em", "fontWeight": "600"}],
+            "display-lg": ["42px", {"lineHeight": "50px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+            "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-lg-mobile": ["34px", {"lineHeight": "42px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+            "body-sm": ["13px", {"lineHeight": "19px", "fontWeight": "400"}],
+            "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+            "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+            "label-lg": ["13px", {"lineHeight": "18px", "letterSpacing": "0.04em", "fontWeight": "600"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    /* Authentic subtle porcelain paper tone */
+    .ledger-paper-canvas {
+      background-color: #FAF9F6;
+    }
+    /* Subtle warm neutral hairline rule */
+    .ledger-double-rule {
+      position: relative;
+    }
+    .ledger-double-rule::after {
+      content: "";
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background-color: #E7E5DD;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="ledger-paper-canvas text-[#1F2429] antialiased min-h-screen flex flex-col selection:bg-pastel-amber selection:text-pastel-amber-text">
+<!-- TOP APP BAR -->
+<header class="bg-[#FAF9F6]/90 backdrop-blur-sm border-b border-[#E7E5DD] sticky top-0 z-40">
+<div class="flex justify-between items-center w-full px-5 py-3.5 max-w-4xl mx-auto">
+<div class="flex items-center space-x-2.5"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpVhARgsAgaw-sLpthqK7wBhGhDecBJLPklO8qFzaNgx1jPurXBSMJ63lAgaOmQhnNmTVnOQZrrnAwiCiLAGz20POFixDH7OTyvxj4j9aolR8KOt30BaK9zpnAgiwkg5FdH-hycR9ytQCRxEAe-G4K8GZBkRBtu6GVIjdBbTHqfv0lp6r-qv8xptFEcMTe0hZuzcJXmbnRBRadJ3Pc47jXPVzJycQDwHX3HKGFcmMhOgQtGoHP6Vhkcw" alt="SmartSpend App Logo" class="w-7 h-7 rounded object-cover shadow-sm flex-shrink-0"><span class="text-xl font-semibold text-[#1F2429] tracking-tight font-serif-display">SmartSpend</span></div>
+<div class="flex items-center space-x-3">
+<span class="hidden sm:inline-block font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Folio: 2024-Q4</span>
+<button aria-label="Account Balance" class="p-1.5 text-[#1F2429] hover:bg-surface-container transition-colors duration-150 rounded">
+<span class="material-symbols-outlined" data-icon="account_balance">account_balance</span>
+</button>
+</div>
+</div>
+</header>
+<!-- MAIN LEDGER CANVAS -->
+<main class="flex-1 w-full max-w-3xl mx-auto px-5 sm:px-6 pt-7 pb-36">
+<!-- EDITORIAL HEADER SECTION -->
+<section class="mb-7">
+<div class="flex flex-col md:flex-row md:items-baseline md:justify-between gap-2.5 pb-2">
+<div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1.5">Passbook Register • Vol. IX</div>
+<h1 class="text-display-lg-mobile sm:text-display-lg font-serif-display text-[#1F2429] tracking-tight">General Ledger</h1>
+</div>
+<div class="flex items-center space-x-3 text-on-surface-variant font-label-md text-label-md">
+<span class="inline-flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-pastel-blue-text"></span>
+            Reconciled Today
+          </span>
+<span class="">•</span>
+<span class="">Archival No. 4082</span>
+</div>
+</div>
+<!-- SEARCH REGISTER LINE -->
+<div class="mt-6 mb-2">
+<div class="relative flex items-center border-b border-[#E7E5DD] focus-within:border-[#1F2429] focus-within:border-b-2 transition-all py-1">
+<span class="material-symbols-outlined text-outline mr-3" data-icon="search">search</span>
+<input class="w-full bg-transparent border-0 py-2 px-0 font-body-md text-body-md text-[#1F2429] placeholder-on-surface-variant/80 focus:ring-0 focus:outline-none" placeholder="Search memo, payee, or ledger voucher..." type="text">
+<button aria-label="Clear or filters" class="p-1.5 text-outline hover:text-[#1F2429] transition-colors">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+</button>
+</div>
+</div>
+<!-- HORIZONTAL LEDGER FILTER TABS -->
+<div class="flex items-center space-x-3 mt-5 overflow-x-auto pb-2 no-scrollbar border-b border-[#E7E5DD]">
+<!-- Active Filter: All -->
+<button class="px-4 py-2 font-label-md text-label-md border-b-2 border-[#1F2429] text-[#1F2429] font-semibold whitespace-nowrap">
+          All Entries
+        </button>
+<button class="px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:text-[#1F2429] transition-colors whitespace-nowrap">
+          This Week
+        </button>
+<button class="px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:text-[#1F2429] transition-colors whitespace-nowrap">
+          This Month
+        </button>
+<button class="px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:text-[#1F2429] transition-colors whitespace-nowrap">
+          Categories
+        </button>
+<button class="px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:text-[#1F2429] transition-colors whitespace-nowrap flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+          Reconciled
+        </button>
+</div>
+</section>
+<!-- SUMMARY BANNER: Passbook Metric Summary (Spacious & Crisp Porcelain) -->
+<section class="mb-9">
+<div class="py-6 px-6 border-y border-[#E7E5DD] bg-surface-container-low/70 relative ledger-double-rule">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-[#E7E5DD]">
+<!-- Month Total Out -->
+<div class="sm:pr-6">
+<span class="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+              Month Total Out
+            </span>
+<div class="flex items-baseline space-x-2.5 mt-2">
+<span class="text-3xl sm:text-headline-lg font-serif-display text-error font-semibold tracking-tight">
+                $1,420.00
+              </span>
+<span class="font-label-md text-label-md text-error flex items-center font-medium">
+                ↓ DR
+              </span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1.5 block">
+              28 debit entries recorded
+            </span>
+</div>
+<!-- Daily Average -->
+<div class="pt-4 sm:pt-0 sm:pl-6">
+<span class="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+              Daily Average
+            </span>
+<div class="flex items-baseline space-x-2.5 mt-2">
+<span class="text-3xl sm:text-headline-lg font-serif-display text-[#1F2429] font-semibold tracking-tight">
+                $47.33
+              </span>
+<span class="font-label-md text-label-md text-pastel-blue-text font-medium">
+                / day
+              </span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1.5 block">
+              -12.4% vs. previous billing cycle
+            </span>
+</div>
+</div>
+</div>
+</section>
+<!-- TRANSACTION ENTRIES: Ruled Khata Ledger -->
+<section class="mt-8 space-y-9">
+<!-- DATE GROUP 1: Thursday, 24 October -->
+<div class="border border-[#E7E5DD] bg-surface-container-lowest/50">
+<!-- Date Header Banner with Spacious Neutral Styling -->
+<div class="flex items-center justify-between py-3.5 px-4 bg-surface-chalk border-b border-[#E7E5DD]">
+<div class="flex items-center space-x-2.5">
+<span class="material-symbols-outlined text-outline text-base" data-icon="calendar_today">calendar_today</span>
+<h2 class="font-label-md text-label-md text-[#1F2429] uppercase tracking-wider font-semibold">Thursday, 24 October</h2>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">Day Debits: $118.40</span>
+</div>
+<!-- Entry 1: Blue Bottle Roasters (Coffee) -->
+<article class="flex items-center justify-between py-5 px-4 border-b border-[#E7E5DD] hover:bg-[#F6F5F0]/70 transition-colors">
+<div class="flex items-center space-x-4 min-w-0 pr-3">
+<div class="w-11 h-11 rounded-md flex-shrink-0 flex items-center justify-center bg-surface-chalk text-[#1F2429] border border-[#E7E5DD]">
+<span class="material-symbols-outlined text-lg" data-icon="coffee">coffee</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<h3 class="font-title-md text-title-md text-[#1F2429] truncate">Blue Bottle Roasters</h3>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-label-sm font-semibold bg-pastel-sage text-pastel-sage-text border border-pastel-sage-border">
+<span class="material-symbols-outlined text-xs" data-icon="check_circle">check_circle</span>
+                  Logged
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Single origin drip &amp; ledger book repair note</p>
+</div>
+</div>
+<div class="text-right flex-shrink-0 pl-2">
+<div class="font-headline-sm text-headline-sm font-serif-display text-error font-medium tracking-tight">
+              −$7.50 <span class="text-xs font-sans text-on-surface-variant font-normal">DR</span>
+</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">08:42 AM</div>
+</div>
+</article>
+<!-- Entry 2: Powell's Technical Books (Book) -->
+<article class="flex items-center justify-between py-5 px-4 border-b border-[#E7E5DD] hover:bg-[#F6F5F0]/70 transition-colors">
+<div class="flex items-center space-x-4 min-w-0 pr-3">
+<div class="w-11 h-11 rounded-md flex-shrink-0 flex items-center justify-center bg-surface-chalk text-[#1F2429] border border-[#E7E5DD]">
+<span class="material-symbols-outlined text-lg" data-icon="menu_book">menu_book</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<h3 class="font-title-md text-title-md text-[#1F2429] truncate">Powell's City of Books</h3>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-label-sm font-semibold bg-pastel-blue text-pastel-blue-text border border-pastel-blue-border">
+<span class="material-symbols-outlined text-xs" data-icon="call_split">call_split</span>
+                  Split
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Double-entry accounting text, stationery quill</p>
+</div>
+</div>
+<div class="text-right flex-shrink-0 pl-2">
+<div class="font-headline-sm text-headline-sm font-serif-display text-error font-medium tracking-tight">
+              −$48.90 <span class="text-xs font-sans text-on-surface-variant font-normal">DR</span>
+</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">11:15 AM</div>
+</div>
+</article>
+<!-- Entry 3: Shell Station 104 (Petrol Pump) -->
+<article class="flex items-center justify-between py-5 px-4 hover:bg-[#F6F5F0]/70 transition-colors">
+<div class="flex items-center space-x-4 min-w-0 pr-3">
+<div class="w-11 h-11 rounded-md flex-shrink-0 flex items-center justify-center bg-surface-chalk text-[#1F2429] border border-[#E7E5DD]">
+<span class="material-symbols-outlined text-lg" data-icon="local_gas_station">local_gas_station</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<h3 class="font-title-md text-title-md text-[#1F2429] truncate">Shell Highway Petroleum</h3>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-label-sm font-semibold bg-pastel-blush text-pastel-blush-text border border-pastel-blush-border">
+<span class="material-symbols-outlined text-xs" data-icon="flag">flag</span>
+                  Flagged
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Unusual fuel surcharge pending review</p>
+</div>
+</div>
+<div class="text-right flex-shrink-0 pl-2">
+<div class="font-headline-sm text-headline-sm font-serif-display text-error font-medium tracking-tight">
+              −$62.00 <span class="text-xs font-sans text-on-surface-variant font-normal">DR</span>
+</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">04:30 PM</div>
+</div>
+</article>
+</div>
+<!-- DATE GROUP 2: Wednesday, 23 October -->
+<div class="border border-[#E7E5DD] bg-surface-container-lowest/50">
+<!-- Date Header Banner with Spacious Neutral Styling -->
+<div class="flex items-center justify-between py-3.5 px-4 bg-surface-chalk border-b border-[#E7E5DD]">
+<div class="flex items-center space-x-2.5">
+<span class="material-symbols-outlined text-outline text-base" data-icon="calendar_today">calendar_today</span>
+<h2 class="font-label-md text-label-md text-[#1F2429] uppercase tracking-wider font-semibold">Wednesday, 23 October</h2>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">Day Debits: $164.20</span>
+</div>
+<!-- Entry 4: Market Provisions (Shopping Bag) -->
+<article class="flex items-center justify-between py-5 px-4 border-b border-[#E7E5DD] hover:bg-[#F6F5F0]/70 transition-colors">
+<div class="flex items-center space-x-4 min-w-0 pr-3">
+<div class="w-11 h-11 rounded-md flex-shrink-0 flex items-center justify-center bg-surface-chalk text-[#1F2429] border border-[#E7E5DD]">
+<span class="material-symbols-outlined text-lg" data-icon="shopping_bag">shopping_bag</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<h3 class="font-title-md text-title-md text-[#1F2429] truncate">Mercantile &amp; Dry Goods</h3>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-label-sm font-semibold bg-pastel-amber text-pastel-amber-text border border-pastel-amber-border">
+<span class="material-symbols-outlined text-xs" data-icon="check_circle">check_circle</span>
+                  Logged
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Pantry provisions, olive oil &amp; grains</p>
+</div>
+</div>
+<div class="text-right flex-shrink-0 pl-2">
+<div class="font-headline-sm text-headline-sm font-serif-display text-error font-medium tracking-tight">
+              −$142.20 <span class="text-xs font-sans text-on-surface-variant font-normal">DR</span>
+</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">02:15 PM</div>
+</div>
+</article>
+<!-- Entry 5: Artisan Bakery (Coffee / Snack) -->
+<article class="flex items-center justify-between py-5 px-4 hover:bg-[#F6F5F0]/70 transition-colors">
+<div class="flex items-center space-x-4 min-w-0 pr-3">
+<div class="w-11 h-11 rounded-md flex-shrink-0 flex items-center justify-center bg-surface-chalk text-[#1F2429] border border-[#E7E5DD]">
+<span class="material-symbols-outlined text-lg" data-icon="local_cafe">local_cafe</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<h3 class="font-title-md text-title-md text-[#1F2429] truncate">Heritage Sourdough Bakery</h3>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-label-sm font-semibold bg-pastel-sage text-pastel-sage-text border border-pastel-sage-border">
+<span class="material-symbols-outlined text-xs" data-icon="check_circle">check_circle</span>
+                  Logged
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Rye loaf &amp; cardamom bun</p>
+</div>
+</div>
+<div class="text-right flex-shrink-0 pl-2">
+<div class="font-headline-sm text-headline-sm font-serif-display text-error font-medium tracking-tight">
+              −$22.00 <span class="text-xs font-sans text-on-surface-variant font-normal">DR</span>
+</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">09:02 AM</div>
+</div>
+</article>
+</div>
+<!-- DATE GROUP 3: Monday, 21 October -->
+<div class="border border-[#E7E5DD] bg-surface-container-lowest/50">
+<!-- Date Header Banner with Spacious Neutral Styling -->
+<div class="flex items-center justify-between py-3.5 px-4 bg-surface-chalk border-b border-[#E7E5DD]">
+<div class="flex items-center space-x-2.5">
+<span class="material-symbols-outlined text-outline text-base" data-icon="calendar_today">calendar_today</span>
+<h2 class="font-label-md text-label-md text-[#1F2429] uppercase tracking-wider font-semibold">Monday, 21 October</h2>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">Day Debits: $86.50</span>
+</div>
+<!-- Entry 6: Apex Fuel & Lube (Petrol Pump) -->
+<article class="flex items-center justify-between py-5 px-4 hover:bg-[#F6F5F0]/70 transition-colors">
+<div class="flex items-center space-x-4 min-w-0 pr-3">
+<div class="w-11 h-11 rounded-md flex-shrink-0 flex items-center justify-center bg-surface-chalk text-[#1F2429] border border-[#E7E5DD]">
+<span class="material-symbols-outlined text-lg" data-icon="local_gas_station">local_gas_station</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<h3 class="font-title-md text-title-md text-[#1F2429] truncate">Standard Oil Depot</h3>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-label-sm font-semibold bg-pastel-blue text-pastel-blue-text border border-pastel-blue-border">
+<span class="material-symbols-outlined text-xs" data-icon="check_circle">check_circle</span>
+                  Logged
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Full tank diesel for regional delivery</p>
+</div>
+</div>
+<div class="text-right flex-shrink-0 pl-2">
+<div class="font-headline-sm text-headline-sm font-serif-display text-error font-medium tracking-tight">
+              −$86.50 <span class="text-xs font-sans text-on-surface-variant font-normal">DR</span>
+</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">07:40 AM</div>
+</div>
+</article>
+</div>
+<!-- LEDGER FOOTER AUDIT STAMP -->
+<div class="pt-8 pb-4 text-center">
+<div class="inline-flex flex-col items-center justify-center py-5 px-7 border border-dashed border-[#E7E5DD] bg-surface-chalk/80 rounded">
+<span class="material-symbols-outlined text-on-surface-variant mb-1.5" data-icon="verified_user">verified_user</span>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Ledger Seal Reconciled</span>
+<span class="font-serif-display text-sm italic text-[#1F2429] mt-1">End of current passbook page 24 • Balances carried forward</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BOTTOM NAVIGATION BAR -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2.5 bg-[#FAF9F6] border-t border-[#E7E5DD] shadow-[0_-1px_3px_rgba(0,0,0,0.03)]">
+<!-- Tab 1: Ledger (ACTIVE) -->
+<a class="flex flex-col items-center justify-center text-[#1F2429] font-label-sm text-label-sm font-semibold px-3 py-1 active:scale-95 transition-transform duration-150" href="#ledger">
+<span class="material-symbols-outlined text-xl" data-icon="book" style="font-variation-settings: 'FILL' 1;">book</span>
+<span class="mt-0.5 text-[11px]">Ledger</span>
+</a>
+<!-- Tab 2: Budgets (INACTIVE) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-[#1F2429] font-label-sm text-label-sm px-3 py-1 transition-colors duration-150 active:scale-95" href="#budgets">
+<span class="material-symbols-outlined text-xl" data-icon="pie_chart">pie_chart</span>
+<span class="mt-0.5 text-[11px]">Budgets</span>
+</a>
+<!-- Tab 3: Scan (INACTIVE) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-[#1F2429] font-label-sm text-label-sm px-3 py-1 transition-colors duration-150 active:scale-95" href="#scan">
+<span class="material-symbols-outlined text-xl" data-icon="document_scanner">document_scanner</span>
+<span class="mt-0.5 text-[11px]">Scan</span>
+</a>
+<!-- Tab 4: History (INACTIVE) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-[#1F2429] font-label-sm text-label-sm px-3 py-1 transition-colors duration-150 active:scale-95" href="#history">
+<span class="material-symbols-outlined text-xl" data-icon="history">history</span>
+<span class="mt-0.5 text-[11px]">History</span>
+</a>
+</nav>
+<!-- Interactive script for filter tab toggle and responsive tactile states -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const filterButtons = document.querySelectorAll('section button');
+      filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          if (this.parentElement.classList.contains('overflow-x-auto')) {
+            const siblings = this.parentElement.querySelectorAll('button');
+            siblings.forEach(s => {
+              s.className = 'px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:text-[#1F2429] transition-colors whitespace-nowrap';
+            });
+            this.className = 'px-4 py-2 font-label-md text-label-md border-b-2 border-[#1F2429] text-[#1F2429] font-semibold whitespace-nowrap';
+          }
+        });
+      });
+    });
+  </script>
+
+
+
+
+</body></html>

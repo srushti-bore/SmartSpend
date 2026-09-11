@@ -1,0 +1,521 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SmartSpend - Budgets &amp; Limits</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&amp;family=Poppins:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Script -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Target Tailwind Configuration -->
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "inverse-surface": "#2f3130",
+          "on-secondary-fixed-variant": "#2e4869",
+          "on-tertiary-fixed-variant": "#614000",
+          "on-secondary-container": "#435d7f",
+          "secondary-fixed": "#d3e4ff",
+          "pastel-periwinkle-subtle": "#E8EDF5",
+          "surface-container": "#eeeeec",
+          "pastel-sage": "#5E8B76",
+          "on-primary-fixed-variant": "#42474f",
+          "surface": "#f9f9f7",
+          "on-primary": "#ffffff",
+          "background": "#FCFCFA",
+          "on-background": "#1a1c1b",
+          "pastel-sage-subtle": "#E6EFEA",
+          "surface-container-lowest": "#ffffff",
+          "on-surface": "#1a1c1b",
+          "secondary": "#466082",
+          "on-primary-container": "#858a93",
+          "on-tertiary": "#ffffff",
+          "on-secondary": "#ffffff",
+          "tertiary-container": "#321f00",
+          "on-tertiary-fixed": "#281800",
+          "ink-muted": "#686E78",
+          "pastel-coral": "#D66853",
+          "surface-container-high": "#e8e8e6",
+          "on-secondary-fixed": "#001c38",
+          "error": "#ba1a1a",
+          "surface-chalk": "#F4F3EF",
+          "surface-container-low": "#f4f4f2",
+          "error-container": "#ffdad6",
+          "pastel-amber": "#E2A746",
+          "on-tertiary-container": "#b58021",
+          "border-hairline": "#E8E7E2",
+          "on-error": "#ffffff",
+          "inverse-on-surface": "#f1f1ef",
+          "tertiary": "#150b00",
+          "secondary-container": "#bcd6fe",
+          "primary-fixed-dim": "#c2c7d0",
+          "surface-variant": "#e2e3e1",
+          "surface-dim": "#dadad8",
+          "outline-variant": "#e4e3de",
+          "primary": "#1a1c1b",
+          "inverse-primary": "#c2c7d0",
+          "surface-bright": "#f9f9f7",
+          "pastel-coral-subtle": "#FCE8E4",
+          "tertiary-fixed-dim": "#f9bc58",
+          "on-surface-variant": "#686E78",
+          "secondary-fixed-dim": "#aec8ef",
+          "pastel-periwinkle": "#5B7598",
+          "on-primary-fixed": "#171c23",
+          "surface-tint": "#5a5f67",
+          "outline": "#8a8d93",
+          "pastel-amber-subtle": "#FDF3E3",
+          "surface-container-highest": "#e2e3e1",
+          "on-error-container": "#93000a",
+          "primary-fixed": "#dee2ec",
+          "primary-container": "#1e232a",
+          "tertiary-fixed": "#ffddb0"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.125rem",
+          "lg": "0.375rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "space-xs": "0.25rem",
+          "space-sm": "0.5rem",
+          "margin": "1.5rem",
+          "space-md": "1rem",
+          "space-lg": "1.5rem",
+          "space-xl": "2.5rem",
+          "margin-tablet": "2.5rem",
+          "gutter": "1.5rem",
+          "margin-desktop": "4rem",
+          "gutter-tablet": "2rem",
+          "gutter-desktop": "2.5rem"
+        },
+        "fontFamily": {
+          "label-md": [
+            "IBM Plex Sans"
+          ],
+          "title-md": [
+            "IBM Plex Sans"
+          ],
+          "body-md": [
+            "IBM Plex Sans"
+          ],
+          "label-lg": [
+            "IBM Plex Sans"
+          ],
+          "title-lg": [
+            "IBM Plex Sans"
+          ],
+          "label-sm": [
+            "IBM Plex Sans"
+          ],
+          "display-lg-mobile": [
+            "Newsreader"
+          ],
+          "body-lg": [
+            "IBM Plex Sans"
+          ],
+          "headline-md": [
+            "Newsreader"
+          ],
+          "display-lg": [
+            "Newsreader"
+          ],
+          "headline-lg": [
+            "Newsreader"
+          ],
+          "body-sm": [
+            "IBM Plex Sans"
+          ],
+          "headline-sm": [
+            "Newsreader"
+          ],
+          "fraunces": [
+            "Fraunces",
+            "serif"
+          ]
+        },
+        "fontSize": {
+          "label-md": [
+            "11px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.06em",
+              "fontWeight": "600"
+            }
+          ],
+          "title-md": [
+            "15px",
+            {
+              "lineHeight": "22px",
+              "fontWeight": "600"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "22px",
+              "fontWeight": "400"
+            }
+          ],
+          "label-lg": [
+            "13px",
+            {
+              "lineHeight": "18px",
+              "letterSpacing": "0.04em",
+              "fontWeight": "600"
+            }
+          ],
+          "title-lg": [
+            "18px",
+            {
+              "lineHeight": "26px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-sm": [
+            "10px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.08em",
+              "fontWeight": "600"
+            }
+          ],
+          "display-lg-mobile": [
+            "34px",
+            {
+              "lineHeight": "42px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "400"
+            }
+          ],
+          "body-lg": [
+            "16px",
+            {
+              "lineHeight": "26px",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-md": [
+            "26px",
+            {
+              "lineHeight": "34px",
+              "fontWeight": "500"
+            }
+          ],
+          "display-lg": [
+            "44px",
+            {
+              "lineHeight": "52px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-lg": [
+            "32px",
+            {
+              "lineHeight": "40px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "500"
+            }
+          ],
+          "body-sm": [
+            "12px",
+            {
+              "lineHeight": "18px",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-sm": [
+            "20px",
+            {
+              "lineHeight": "28px",
+              "fontWeight": "500"
+            }
+          ]
+        }
+      },
+    },
+  }
+</script>
+<style>
+    .font-fraunces {
+      font-family: 'Fraunces', Georgia, serif;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .ledger-double-rule {
+      position: relative;
+      height: 4px;
+      border-top: 1px solid #E8E7E2;
+      border-bottom: 1px solid #E8E7E2;
+    }
+    body {
+      min-height: max(884px, 100dvh);
+      background-color: #FCFCFA;
+    }
+  </style>
+</head>
+<body class="bg-[#FCFCFA] text-on-surface antialiased min-h-screen flex flex-col font-body-md text-body-md selection:bg-pastel-amber-subtle selection:text-ink-muted" style="font-family: Poppins, sans-serif;">
+<!-- TopAppBar -->
+<header class="bg-[#FCFCFA]/90 backdrop-blur-md sticky top-0 z-40 border-b border-border-hairline">
+<div class="flex justify-between items-center w-full px-margin py-3.5 max-w-3xl mx-auto">
+<div class="flex items-center gap-space-sm"><button aria-label="Menu" class="p-1.5 text-on-surface hover:bg-surface-chalk active:opacity-80 transition-colors duration-150 rounded-lg"><span class="material-symbols-outlined text-on-surface text-[22px]" data-icon="menu_book">menu_book</span></button><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpVhARgsAgaw-sLpthqK7wBhGhDecBJLPklO8qFzaNgx1jPurXBSMJ63lAgaOmQhnNmTVnOQZrrnAwiCiLAGz20POFixDH7OTyvxj4j9aolR8KOt30BaK9zpnAgiwkg5FdH-hycR9ytQCRxEAe-G4K8GZBkRBtu6GVIjdBbTHqfv0lp6r-qv8xptFEcMTe0hZuzcJXmbnRBRadJ3Pc47jXPVzJycQDwHX3HKGFcmMhOgQtGoHP6Vhkcw" alt="SmartSpend App Logo" class="w-7 h-7 rounded-lg object-cover shadow-sm flex-shrink-0" style="width: 28px; height: 28px;"><span class="text-lg font-headline-sm font-semibold text-on-surface tracking-tight">SmartSpend</span></div>
+<!-- Desktop Navigation Cluster -->
+<nav class="hidden md:flex items-center gap-space-lg">
+<a class="text-ink-muted hover:text-on-surface transition-colors text-label-md font-label-md" href="#">Ledger</a>
+<a class="text-on-surface font-semibold text-label-md font-label-md" href="#">Budgets</a>
+<a class="text-ink-muted hover:text-on-surface transition-colors text-label-md font-label-md" href="#">Scan</a>
+<a class="text-ink-muted hover:text-on-surface transition-colors text-label-md font-label-md" href="#">History</a>
+</nav>
+<div class="flex items-center gap-space-sm"><button aria-label="Menu" class="p-1.5 text-on-surface hover:bg-surface-chalk active:opacity-80 transition-colors duration-150 rounded-lg"><span class="material-symbols-outlined text-on-surface text-[22px]" data-icon="menu_book">menu_book</span></button><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpVhARgsAgaw-sLpthqK7wBhGhDecBJLPklO8qFzaNgx1jPurXBSMJ63lAgaOmQhnNmTVnOQZrrnAwiCiLAGz20POFixDH7OTyvxj4j9aolR8KOt30BaK9zpnAgiwkg5FdH-hycR9ytQCRxEAe-G4K8GZBkRBtu6GVIjdBbTHqfv0lp6r-qv8xptFEcMTe0hZuzcJXmbnRBRadJ3Pc47jXPVzJycQDwHX3HKGFcmMhOgQtGoHP6Vhkcw" alt="SmartSpend App Logo" class="w-7 h-7 rounded-lg object-cover shadow-sm flex-shrink-0" style="width: 28px; height: 28px;"><span class="text-lg font-headline-sm font-semibold text-on-surface tracking-tight">SmartSpend</span></div>
+</div>
+</header>
+<!-- Main Ledger Canvas: Airy sRGB Pastel Porcelain Surface -->
+<main class="flex-1 w-full max-w-3xl mx-auto px-margin pt-7 pb-28 md:pb-16">
+<!-- Header Section: Fraunces Serif & Month Selector Ribbon -->
+<section class="space-y-space-md mb-8">
+<div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-3 border-b border-border-hairline pb-4">
+<div>
+<span class="font-label-sm text-label-sm text-ink-muted uppercase tracking-wider block mb-1">Allocation Register</span>
+<h1 class="font-fraunces text-3xl sm:text-4xl text-on-surface font-semibold tracking-tight">Budgets &amp; Limits</h1>
+</div>
+<!-- Month Selector Ribbon -->
+<div class="flex items-center gap-1.5 self-start sm:self-auto bg-surface-chalk px-3 py-1.5 rounded-lg border border-border-hairline">
+<button aria-label="Previous Month" class="text-ink-muted hover:text-on-surface flex items-center p-0.5">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span>
+</button>
+<span class="font-label-md text-label-md text-on-surface font-semibold px-2">October 2024</span>
+<button aria-label="Next Month" class="text-ink-muted hover:text-on-surface flex items-center p-0.5">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Overall Metric Summary with Generous Negative Space & Fraunces Numerals -->
+<div class="pt-5 pb-6">
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-4">
+<div>
+<div class="font-label-sm text-label-sm text-ink-muted uppercase tracking-wider">Total Monthly Expenditure</div>
+<div class="flex items-baseline gap-2 mt-1.5">
+<span class="font-fraunces text-4xl sm:text-5xl font-semibold text-on-surface tracking-tight">$1,850</span>
+<span class="font-fraunces text-xl sm:text-2xl text-ink-muted font-normal">of $2,400 spent</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 text-pastel-sage font-label-md text-label-md font-semibold bg-pastel-sage-subtle px-3 py-1.5 rounded-full border border-pastel-sage/20 self-start sm:self-auto">
+<span class="material-symbols-outlined text-sm text-pastel-sage" data-icon="verified">verified</span>
+<span class="">$550 Unallocated Reserve</span>
+</div>
+</div>
+<!-- Ledger Progress Bar Line (Airy pastel tone) -->
+<div class="space-y-2">
+<div class="w-full h-2 bg-surface-chalk rounded-full border border-border-hairline overflow-hidden flex">
+<div class="h-full bg-pastel-amber rounded-full" style="width: 77%;"></div>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm text-ink-muted">
+<span class="">Fiscal Cap: $2,400.00</span>
+<span class="font-semibold text-on-surface">77% utilized</span>
+</div>
+</div>
+</div>
+<!-- Subtle Ledger Double Rule Separator -->
+<div class="ledger-double-rule w-full" role="separator"></div>
+</section>
+<!-- Ledger Filter Controls & Subheader -->
+<div class="flex items-center justify-between py-2 mb-4 text-label-sm font-label-sm text-ink-muted">
+<span class="uppercase tracking-wider">Category Ledger Accounts (4)</span>
+<div class="flex items-center gap-space-sm">
+<span class="hidden sm:inline">Sort: Priority Ratio</span>
+<button class="flex items-center gap-1 hover:text-on-surface transition-colors text-ink-muted">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+<span class="">Filter</span>
+</button>
+</div>
+</div>
+<!-- Budget Cards with Generous Padding (p-5), Soft Hairline Borders & Airy Spacing -->
+<div class="space-y-4">
+<!-- Item 1: Food & Dining (Near Limit - Warm Soft Gold Accent & Lavender Subtle Tone) -->
+<div class="p-5 bg-white rounded-xl border border-border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-[#D8D5CC]">
+<div class="flex items-center gap-4">
+<!-- Pastel Periwinkle & Warm Gold Circular Progress Ring (84%) -->
+<div class="relative w-12 h-12 flex-shrink-0 flex items-center justify-center">
+<svg class="w-12 h-12 transform -rotate-90" viewBox="0 0 44 44">
+<circle cx="22" cy="22" fill="none" r="17" stroke="#E8EDF5" stroke-width="3"></circle>
+<circle cx="22" cy="22" fill="none" r="17" stroke="#E2A746" stroke-dasharray="106.8" stroke-dashoffset="17.08" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<span class="absolute text-[11px] font-semibold text-on-surface font-label-sm">84%</span>
+</div>
+<!-- Category Narrative -->
+<div>
+<div class="font-title-md text-title-md text-on-surface font-semibold">Food &amp; Dining</div>
+<div class="text-body-sm font-body-sm text-ink-muted flex items-center gap-1.5 mt-0.5">
+<span class="">Stationer Code #FD-01</span>
+<span class="">•</span>
+<span class="">18 ledger entries</span>
+</div>
+</div>
+</div>
+<!-- Metric & Near Limit Status Pill -->
+<div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center pl-16 sm:pl-0">
+<div class="text-right">
+<span class="font-fraunces text-2xl font-semibold text-on-surface">$420</span>
+<span class="font-body-sm text-body-sm text-ink-muted font-normal"> of $500</span>
+</div>
+<!-- Status Pill: Warm Soft Gold -->
+<div class="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 border border-pastel-amber/40 bg-pastel-amber-subtle text-[#996817] rounded-full">
+<span class="material-symbols-outlined text-[13px]" data-icon="timer">timer</span>
+<span class="font-label-sm text-label-sm font-semibold tracking-wide">Near limit</span>
+</div>
+</div>
+</div>
+<!-- Item 2: Groceries (Over Budget - Gentle Pastel Coral / Rose) -->
+<div class="p-5 bg-white rounded-xl border border-border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-[#D8D5CC]">
+<div class="flex items-center gap-4">
+<!-- Gentle Pastel Coral Circular Progress Ring (103%) -->
+<div class="relative w-12 h-12 flex-shrink-0 flex items-center justify-center">
+<svg class="w-12 h-12 transform -rotate-90" viewBox="0 0 44 44">
+<circle cx="22" cy="22" fill="none" r="17" stroke="#FCE8E4" stroke-width="3"></circle>
+<circle cx="22" cy="22" fill="none" r="17" stroke="#D66853" stroke-dasharray="106.8" stroke-dashoffset="0" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<span class="absolute text-[11px] font-semibold text-pastel-coral font-label-sm">103%</span>
+</div>
+<!-- Category Narrative -->
+<div>
+<div class="font-title-md text-title-md text-on-surface font-semibold">Groceries</div>
+<div class="text-body-sm font-body-sm text-ink-muted flex items-center gap-1.5 mt-0.5">
+<span class="">Provisions &amp; Pantry</span>
+<span class="">•</span>
+<span class="">Exceeded by $10.00</span>
+</div>
+</div>
+</div>
+<!-- Metric & Over Budget Status Pill -->
+<div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center pl-16 sm:pl-0">
+<div class="text-right">
+<span class="font-fraunces text-2xl font-semibold text-pastel-coral">$310</span>
+<span class="font-body-sm text-body-sm text-ink-muted font-normal"> of $300</span>
+</div>
+<!-- Status Pill: Gentle Pastel Coral / Rose -->
+<div class="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 border border-pastel-coral/30 bg-pastel-coral-subtle text-pastel-coral rounded-full">
+<span class="material-symbols-outlined text-[13px]" data-icon="error_outline">error_outline</span>
+<span class="font-label-sm text-label-sm font-semibold tracking-wide">Over budget</span>
+</div>
+</div>
+</div>
+<!-- Item 3: Daily Transit (On Track - Pastel Sage) -->
+<div class="p-5 bg-white rounded-xl border border-border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-[#D8D5CC]">
+<div class="flex items-center gap-4">
+<!-- Pastel Sage Circular Progress Ring (48%) -->
+<div class="relative w-12 h-12 flex-shrink-0 flex items-center justify-center">
+<svg class="w-12 h-12 transform -rotate-90" viewBox="0 0 44 44">
+<circle cx="22" cy="22" fill="none" r="17" stroke="#E6EFEA" stroke-width="3"></circle>
+<circle cx="22" cy="22" fill="none" r="17" stroke="#5E8B76" stroke-dasharray="106.8" stroke-dashoffset="55.5" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<span class="absolute text-[11px] font-semibold text-on-surface font-label-sm">48%</span>
+</div>
+<!-- Category Narrative -->
+<div>
+<div class="font-title-md text-title-md text-on-surface font-semibold">Daily Transit</div>
+<div class="text-body-sm font-body-sm text-ink-muted flex items-center gap-1.5 mt-0.5">
+<span class="">Rail, Commute &amp; Fuel</span>
+<span class="">•</span>
+<span class="">$104 remaining</span>
+</div>
+</div>
+</div>
+<!-- Metric & On Track Status Pill -->
+<div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center pl-16 sm:pl-0">
+<div class="text-right">
+<span class="font-fraunces text-2xl font-semibold text-on-surface">$96</span>
+<span class="font-body-sm text-body-sm text-ink-muted font-normal"> of $200</span>
+</div>
+<!-- Status Pill: Pastel Sage -->
+<div class="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 border border-pastel-sage/30 bg-pastel-sage-subtle text-pastel-sage rounded-full">
+<span class="material-symbols-outlined text-[13px]" data-icon="check_circle">check_circle</span>
+<span class="font-label-sm text-label-sm font-semibold tracking-wide">On track</span>
+</div>
+</div>
+</div>
+<!-- Item 4: Books & Leisure (On Track - Soft Periwinkle & Pastel Sage) -->
+<div class="p-5 bg-white rounded-xl border border-border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-[#D8D5CC]">
+<div class="flex items-center gap-4">
+<!-- Soft Periwinkle Circular Progress Ring (60%) -->
+<div class="relative w-12 h-12 flex-shrink-0 flex items-center justify-center">
+<svg class="w-12 h-12 transform -rotate-90" viewBox="0 0 44 44">
+<circle cx="22" cy="22" fill="none" r="17" stroke="#E8EDF5" stroke-width="3"></circle>
+<circle cx="22" cy="22" fill="none" r="17" stroke="#5B7598" stroke-dasharray="106.8" stroke-dashoffset="42.7" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<span class="absolute text-[11px] font-semibold text-on-surface font-label-sm">60%</span>
+</div>
+<!-- Category Narrative -->
+<div>
+<div class="font-title-md text-title-md text-on-surface font-semibold">Books &amp; Leisure</div>
+<div class="text-body-sm font-body-sm text-ink-muted flex items-center gap-1.5 mt-0.5">
+<span class="">Publications, Bindery, Arts</span>
+<span class="">•</span>
+<span class="">$60 remaining</span>
+</div>
+</div>
+</div>
+<!-- Metric & On Track Status Pill -->
+<div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center pl-16 sm:pl-0">
+<div class="text-right">
+<span class="font-fraunces text-2xl font-semibold text-on-surface">$90</span>
+<span class="font-body-sm text-body-sm text-ink-muted font-normal"> of $150</span>
+</div>
+<!-- Status Pill: Pastel Sage -->
+<div class="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 border border-pastel-sage/30 bg-pastel-sage-subtle text-pastel-sage rounded-full">
+<span class="material-symbols-outlined text-[13px]" data-icon="check_circle">check_circle</span>
+<span class="font-label-sm text-label-sm font-semibold tracking-wide">On track</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footnote / Reconcile Stamp -->
+<div class="mt-8 pt-5 border-t border-border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-ink-muted font-label-sm text-label-sm">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm" data-icon="verified_user">verified_user</span>
+<span class="">Reconciled against verified clearing balances on 28 Oct 2024</span>
+</div>
+<button class="text-on-surface hover:text-pastel-periwinkle transition-colors font-semibold self-start sm:self-auto flex items-center gap-1">
+<span class="">Create New Budget Ledger</span>
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar - Mobile Only -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-space-sm py-2 bg-[#FCFCFA]/95 backdrop-blur-md border-t border-border-hairline">
+<!-- Ledger -->
+<a class="flex flex-col items-center justify-center text-ink-muted font-label-sm text-label-sm p-space-xs hover:text-on-surface transition-colors duration-150 active:scale-95" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="book">book</span>
+<span class="mt-0.5">Ledger</span>
+</a>
+<!-- Budgets (Active) -->
+<a aria-current="page" class="flex flex-col items-center justify-center text-on-surface font-label-sm text-label-sm font-semibold p-space-xs active:scale-95" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="pie_chart" style="font-variation-settings: 'FILL' 1;">pie_chart</span>
+<span class="mt-0.5">Budgets</span>
+</a>
+<!-- Scan -->
+<a class="flex flex-col items-center justify-center text-ink-muted font-label-sm text-label-sm p-space-xs hover:text-on-surface transition-colors duration-150 active:scale-95" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="document_scanner">document_scanner</span>
+<span class="mt-0.5">Scan</span>
+</a>
+<!-- History -->
+<a class="flex flex-col items-center justify-center text-ink-muted font-label-sm text-label-sm p-space-xs hover:text-on-surface transition-colors duration-150 active:scale-95" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="history">history</span>
+<span class="mt-0.5">History</span>
+</a>
+</nav>
+
+
+
+
+</body></html>

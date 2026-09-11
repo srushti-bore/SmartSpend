@@ -1,0 +1,267 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SmartSpend - Add Expense</title>
+<!-- Fonts: Fraunces / Newsreader and IBM Plex Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&amp;family=Poppins:wght@300;400;500;600;700&amp;display=swap">
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS with Forms and Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration verbatim from Design System -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "charcoal": "#1E232A",
+            "ink-muted": "#646B79",
+            "paper": "#FBFBF9",
+            "paper-surface": "#FFFFFF",
+            "border-hairline": "#EAE8E2",
+            "honey": {
+              DEFAULT: "#D9983B",
+              hover: "#CA892E",
+              light: "#FDF5E8",
+              text: "#66410B"
+            },
+            "pastel-periwinkle": {
+              DEFAULT: "#4F6E94",
+              bg: "#EDF2F8",
+              border: "#D2DFEE"
+            },
+            "pastel-amber": {
+              DEFAULT: "#966516",
+              bg: "#FAF2E6",
+              border: "#F1E0C4"
+            },
+            "pastel-peach": {
+              DEFAULT: "#A05344",
+              bg: "#FDF0EC",
+              border: "#F8DDD4"
+            },
+            "pastel-lavender": {
+              DEFAULT: "#6A5A88",
+              bg: "#F4F0F9",
+              border: "#E4DDF1"
+            },
+            "pastel-teal": {
+              DEFAULT: "#38706F",
+              bg: "#ECF5F5",
+              border: "#CFE6E5"
+            }
+          },
+          "fontFamily": {
+            "fraunces": ["Fraunces", "serif"],
+            "sans": ["IBM Plex Sans", "sans-serif"],
+            "serif": ["Newsreader", "serif"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .ledger-double-rule {
+      border-top: 1px solid #ECEAE4;
+      border-bottom: 1px solid #ECEAE4;
+      height: 4px;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .ledger-cursor {
+      animation: blink 1.1s steps(1) infinite;
+    }
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-[#F6F5F2] text-charcoal antialiased min-h-screen flex flex-col justify-end relative overflow-x-hidden font-sans" style="font-family: Poppins, sans-serif;">
+<!-- BACKGROUND: Dimmed Stationary Paper Ledger Context (Clean light neutral background, no green tint) -->
+<div class="fixed inset-0 z-0 flex flex-col justify-between opacity-35 pointer-events-none select-none filter blur-[0.6px]">
+<!-- Ghost TopAppBar -->
+<header class="w-full border-b border-[#EAE8E2] bg-paper">
+<div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+<div class="flex items-center space-x-2.5">
+<span class="material-symbols-outlined text-charcoal text-[24px]">menu_book</span>
+<span class="text-xl font-medium text-charcoal font-serif tracking-tight" style="font-family: &quot;Instrument Serif&quot;, Georgia, serif;">SmartSpend</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-ink-muted text-[22px]">account_balance</span>
+</div>
+</div>
+</header>
+<!-- Ghost Ledger Passbook Summary & Rows -->
+<main class="w-full max-w-xl mx-auto px-6 pt-8 flex-1">
+<div class="pb-5 border-b border-[#EAE8E2]">
+<p class="text-[11px] uppercase tracking-widest font-semibold text-ink-muted">General Balance</p>
+<p class="text-4xl text-charcoal mt-1.5 font-serif font-light tracking-tight" style="font-family: &quot;Instrument Serif&quot;, Georgia, serif;">$4,892.40</p>
+</div>
+<div class="divide-y divide-[#EAE8E2]">
+<div class="py-4 flex justify-between items-center">
+<div>
+<p class="text-[11px] font-semibold text-ink-muted tracking-wide">OCT 24 • RECONCILED</p>
+<p class="text-[15px] font-medium text-charcoal mt-0.5">Artisan Baker Guild</p>
+</div>
+<span class="text-base font-serif text-[#C44D3D]" style="font-family: &quot;Instrument Serif&quot;, Georgia, serif;">↓ $14.20 DR</span>
+</div>
+<div class="py-4 flex justify-between items-center">
+<div>
+<p class="text-[11px] font-semibold text-ink-muted tracking-wide">OCT 23 • PAYROLL</p>
+<p class="text-[15px] font-medium text-charcoal mt-0.5">Quarterly Remittance</p>
+</div>
+<span class="text-base font-serif text-pastel-teal" style="font-family: &quot;Instrument Serif&quot;, Georgia, serif;">↑ $3,200.00 CR</span>
+</div>
+</div>
+</main>
+</div>
+<!-- MODAL SCRIM OVERLAY (Soft atmospheric veil) -->
+<div class="fixed inset-0 bg-[#1E232A]/20 backdrop-blur-[2px] z-20 transition-opacity"></div>
+<!-- NATIVE MODAL BOTTOM SHEET -->
+<section aria-labelledby="sheet-title" aria-modal="true" class="relative z-30 w-full max-w-xl mx-auto bg-paper border-t border-border-hairline rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.06)] flex flex-col max-h-[90vh] overflow-y-auto" role="dialog">
+<!-- Grab Handle -->
+<div class="pt-3 pb-2 flex justify-center w-full">
+<div aria-hidden="true" class="w-10 h-1.5 rounded-full bg-[#E5E3DC]"></div>
+</div>
+<!-- Header Strip -->
+<div class="px-8 pt-2 pb-4 flex items-center justify-between border-b border-border-hairline">
+<div class="flex items-center space-x-2.5">
+<span class="w-2 h-2 rounded-full bg-honey inline-block"></span>
+<h1 class="text-[12px] text-ink-muted uppercase tracking-[0.08em] font-semibold" id="sheet-title">
+          Ledger Entry • Outflow
+        </h1>
+</div>
+<!-- Close Action -->
+<button aria-label="Dismiss Sheet" class="w-8 h-8 flex items-center justify-center rounded-full text-ink-muted hover:text-charcoal hover:bg-black/5 transition-all duration-150 active:scale-95" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Sheet Form with Generous Breathing Room -->
+<form class="p-8 flex flex-col space-y-7" onsubmit="event.preventDefault();">
+<!-- 1. HERO AMOUNT INPUT (Fraunces Serif Anchor) -->
+<div class="text-center pt-2 pb-1">
+<label class="block text-[11px] uppercase tracking-[0.1em] font-semibold text-ink-muted mb-2" for="expense-amount">
+          Debit Sum
+        </label>
+<div class="inline-flex items-baseline justify-center relative cursor-text group">
+<span class="text-4xl sm:text-5xl text-ink-muted/50 font-fraunces font-light mr-1.5 select-none" style="font-family: &quot;Instrument Serif&quot;, Georgia, serif;">$</span>
+<input class="w-56 bg-transparent border-0 border-b-2 border-honey pb-1 pt-0 px-1 text-center text-4xl sm:text-5xl text-charcoal font-fraunces font-normal focus:ring-0 focus:border-honey tracking-tight transition-colors" id="expense-amount" inputmode="decimal" name="amount" type="text" value="18.40" style="font-family: &quot;Instrument Serif&quot;, Georgia, serif;">
+<span aria-hidden="true" class="w-[2px] h-10 bg-honey ledger-cursor inline-block absolute right-3 bottom-2"></span>
+</div>
+<p class="mt-2.5 text-[12px] text-ink-muted/80 font-normal">Entry currency: USD ($)</p>
+</div>
+<!-- Delicate Hairline Divider -->
+<div aria-hidden="true" class="ledger-double-rule w-full opacity-70"></div>
+<!-- 2. ACCOUNT SELECTOR & DATE ROW -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+<!-- Account Switcher -->
+<div class="flex flex-col">
+<label class="text-[11px] uppercase tracking-[0.08em] font-semibold text-ink-muted mb-2">
+            Drawn From Account
+          </label>
+<div class="relative">
+<select class="w-full bg-paper-surface border border-border-hairline rounded-xl px-4 py-3.5 text-charcoal text-[14px] font-medium focus:border-honey focus:ring-1 focus:ring-honey/20 appearance-none pr-10 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+<option value="debit">Debit Passbook (•••• 4019)</option>
+<option value="cash">Petty Cash Reserve</option>
+<option value="vault">Treasury Reserve</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-muted text-[20px]">
+              expand_more
+            </span>
+</div>
+</div>
+<!-- Date / Timestamp Pill -->
+<div class="flex flex-col">
+<label class="text-[11px] uppercase tracking-[0.08em] font-semibold text-ink-muted mb-2">
+            Stamp Timestamp
+          </label>
+<button class="w-full flex items-center justify-between bg-paper-surface border border-border-hairline rounded-xl px-4 py-3.5 hover:border-ink-muted/40 transition-all duration-150 active:scale-[0.99] text-left shadow-[0_1px_2px_rgba(0,0,0,0.02)]" type="button">
+<div class="flex items-center space-x-2.5">
+<span class="material-symbols-outlined text-pastel-periwinkle text-[19px]">calendar_today</span>
+<span class="text-[14px] text-charcoal font-medium">Today, 2:15 PM</span>
+</div>
+<span class="material-symbols-outlined text-ink-muted/70 text-[18px]">edit_calendar</span>
+</button>
+</div>
+</div>
+<!-- 3. MERCHANT / DESCRIPTION REGISTER INPUT -->
+<div class="flex flex-col pt-1">
+<label class="text-[11px] uppercase tracking-[0.08em] font-semibold text-ink-muted mb-2" for="merchant-field">
+          Merchant / Payee Narrative
+        </label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined text-ink-muted/80 absolute left-4 text-[20px]">storefront</span>
+<input class="w-full bg-paper-surface border border-border-hairline rounded-xl pl-11 pr-4 py-3.5 text-[15px] text-charcoal placeholder:text-ink-muted/40 focus:ring-1 focus:ring-honey/20 focus:border-honey transition-all duration-150 shadow-[0_1px_2px_rgba(0,0,0,0.02)]" id="merchant-field" name="merchant" placeholder="e.g., Corner Stationer or Payee" type="text" value="Blue Bottle Coffee">
+</div>
+</div>
+<!-- 4. CATEGORY SELECTION CHIPS (Multi-color soft pastel palette) -->
+<div class="flex flex-col pt-1">
+<div class="flex justify-between items-center mb-3">
+<label class="text-[11px] uppercase tracking-[0.08em] font-semibold text-ink-muted">
+            Ledger Allocation
+          </label>
+<span class="text-[12px] font-medium text-honey-text bg-pastel-amber-bg px-2 py-0.5 rounded-full border border-pastel-amber-border">1 Tag Selected</span>
+</div>
+<!-- Multi-color pastel tags -->
+<div aria-label="Category Selection" class="flex flex-wrap gap-2.5" role="radiogroup">
+<!-- Pastel Periwinkle (Active) -->
+<button aria-checked="true" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-pastel-periwinkle text-white font-medium text-[13px] shadow-sm transition-all duration-150 active:scale-95 border border-pastel-periwinkle" role="radio" type="button">
+<span class="material-symbols-outlined text-[16px]">restaurant</span>
+<span class="">Dining</span>
+<span class="material-symbols-outlined text-[14px]">check</span>
+</button>
+<!-- Pastel Amber -->
+<button aria-checked="false" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-pastel-amber-bg border border-pastel-amber-border text-pastel-amber hover:border-pastel-amber/60 font-medium text-[13px] transition-all duration-150 active:scale-95" role="radio" type="button">
+<span class="material-symbols-outlined text-[16px] text-pastel-amber">shopping_basket</span>
+<span class="">Groceries</span>
+</button>
+<!-- Pastel Peach -->
+<button aria-checked="false" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-pastel-peach-bg border border-pastel-peach-border text-pastel-peach hover:border-pastel-peach/60 font-medium text-[13px] transition-all duration-150 active:scale-95" role="radio" type="button">
+<span class="material-symbols-outlined text-[16px] text-pastel-peach">commute</span>
+<span class="">Transit</span>
+</button>
+<!-- Pastel Lavender -->
+<button aria-checked="false" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-pastel-lavender-bg border border-pastel-lavender-border text-pastel-lavender hover:border-pastel-lavender/60 font-medium text-[13px] transition-all duration-150 active:scale-95" role="radio" type="button">
+<span class="material-symbols-outlined text-[16px] text-pastel-lavender">home_repair_service</span>
+<span class="">Household</span>
+</button>
+<!-- Pastel Teal -->
+<button aria-checked="false" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-pastel-teal-bg border border-pastel-teal-border text-pastel-teal hover:border-pastel-teal/60 font-medium text-[13px] transition-all duration-150 active:scale-95" role="radio" type="button">
+<span class="material-symbols-outlined text-[16px] text-pastel-teal">water_drop</span>
+<span class="">Utilities</span>
+</button>
+</div>
+</div>
+<!-- 5. OPTIONAL LEDGER MEMO / RECEIPT ATTACHMENT -->
+<div class="pt-2 border-t border-dashed border-border-hairline flex items-center justify-between text-ink-muted">
+<button class="flex items-center space-x-2 py-1 text-ink-muted hover:text-charcoal text-[12px] uppercase tracking-wider font-semibold transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+<span class="">Attach Paper Voucher</span>
+</button>
+<span class="text-[12px] text-ink-muted/70 font-mono">Folio No. 048-B</span>
+</div>
+<!-- 6. PRIMARY CTA (Refined Warm Pastel Honey/Clay Button) -->
+<div class="pt-2">
+<button class="w-full bg-[#D9983B] hover:bg-[#CA892E] text-white py-4 px-6 rounded-xl font-medium text-[15px] tracking-wide flex items-center justify-center space-x-2 shadow-[0_2px_8px_rgba(217,152,59,0.25)] transition-all duration-150 active:opacity-95 active:scale-[0.99]" type="submit">
+<span class="material-symbols-outlined text-[20px]">done_all</span>
+<span class="">Add expense</span>
+</button>
+</div>
+</form>
+</section>
+
+
+
+
+</body></html>
