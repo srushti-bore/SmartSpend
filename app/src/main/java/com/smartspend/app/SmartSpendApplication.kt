@@ -15,6 +15,16 @@ import javax.inject.Inject
 @HiltAndroidApp
 class SmartSpendApplication : Application(), Configuration.Provider {
 
+    companion object {
+        init {
+            try {
+                System.loadLibrary("sqlcipher")
+            } catch (t: Throwable) {
+                // Ignore
+            }
+        }
+    }
+
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 

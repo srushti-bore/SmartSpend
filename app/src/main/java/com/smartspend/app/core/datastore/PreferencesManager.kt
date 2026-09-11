@@ -21,6 +21,7 @@ class PreferencesManager @Inject constructor(
     companion object {
         private val ACTIVE_PROFILE_ID_KEY = stringPreferencesKey("active_profile_id")
         private val PREFERRED_CURRENCY_KEY = stringPreferencesKey("preferred_currency")
+        private val THEME_MODE_KEY = stringPreferencesKey("theme_mode") // "SYSTEM", "LIGHT", "DARK"
     }
 
     val activeProfileIdFlow: Flow<String?> = context.dataStore.data.map { preferences ->
@@ -29,6 +30,10 @@ class PreferencesManager @Inject constructor(
 
     val preferredCurrencyFlow: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[PREFERRED_CURRENCY_KEY] ?: "INR"
+    }
+
+    val themeModeFlow: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[THEME_MODE_KEY] ?: "SYSTEM"
     }
 
     suspend fun setActiveProfileId(profileId: String?) {
@@ -44,6 +49,12 @@ class PreferencesManager @Inject constructor(
     suspend fun setPreferredCurrency(currency: String) {
         context.dataStore.edit { preferences ->
             preferences[PREFERRED_CURRENCY_KEY] = currency
+        }
+    }
+
+    suspend fun setThemeMode(themeMode: String) {
+        context.dataStore.edit { preferences ->
+            preferences[THEME_MODE_KEY] = themeMode
         }
     }
 }

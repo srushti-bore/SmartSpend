@@ -2,6 +2,7 @@ package com.smartspend.app.core.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,9 +18,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -33,11 +33,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.smartspend.app.core.money.MoneyUtils
-import com.smartspend.app.core.ui.theme.BrandPrimary
-import com.smartspend.app.core.ui.theme.StatusDanger
-import com.smartspend.app.core.ui.theme.StatusSuccess
-import com.smartspend.app.core.ui.theme.StatusWarning
+import com.smartspend.app.core.ui.theme.AtelierAmber
+import com.smartspend.app.core.ui.theme.AtelierAmberSubtle
+import com.smartspend.app.core.ui.theme.AtelierCanvas
+import com.smartspend.app.core.ui.theme.AtelierCoral
+import com.smartspend.app.core.ui.theme.AtelierCoralSubtle
+import com.smartspend.app.core.ui.theme.AtelierHairline
+import com.smartspend.app.core.ui.theme.AtelierInkMuted
+import com.smartspend.app.core.ui.theme.AtelierPeriwinkle
+import com.smartspend.app.core.ui.theme.AtelierPeriwinkleSubtle
+import com.smartspend.app.core.ui.theme.AtelierPrimaryInk
+import com.smartspend.app.core.ui.theme.AtelierSage
+import com.smartspend.app.core.ui.theme.AtelierSageSubtle
+import com.smartspend.app.core.ui.theme.AtelierSurfaceChalk
+import com.smartspend.app.core.ui.theme.NewsreaderFontFamily
 import com.smartspend.app.domain.model.BudgetProgress
 import com.smartspend.app.domain.model.BudgetStatus
 import com.smartspend.app.domain.model.Expense
@@ -50,35 +61,32 @@ fun MetricCard(
     title: String,
     value: String,
     subtitle: String? = null,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface,
+    backgroundColor: Color = AtelierSurfaceChalk,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    Surface(
+        modifier = modifier.border(1.dp, AtelierHairline, RoundedCornerShape(4.dp)),
+        shape = RoundedCornerShape(4.dp),
+        color = backgroundColor
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(14.dp)
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(6.dp))
+            SectionLabel(text = title)
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
+                fontFamily = NewsreaderFontFamily,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Medium,
+                color = AtelierPrimaryInk
             )
             if (subtitle != null) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(3.dp))
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AtelierInkMuted
                 )
             }
         }
@@ -91,9 +99,21 @@ fun BudgetProgressBar(
     modifier: Modifier = Modifier
 ) {
     val statusColor = when (progress.status) {
-        BudgetStatus.ON_TRACK -> StatusSuccess
-        BudgetStatus.NEAR_LIMIT -> StatusWarning
-        BudgetStatus.OVER_BUDGET -> StatusDanger
+        BudgetStatus.ON_TRACK -> AtelierSage
+        BudgetStatus.NEAR_LIMIT -> AtelierAmber
+        BudgetStatus.OVER_BUDGET -> AtelierCoral
+    }
+
+    val statusBgColor = when (progress.status) {
+        BudgetStatus.ON_TRACK -> AtelierSageSubtle
+        BudgetStatus.NEAR_LIMIT -> AtelierAmberSubtle
+        BudgetStatus.OVER_BUDGET -> AtelierCoralSubtle
+    }
+
+    val statusLabel = when (progress.status) {
+        BudgetStatus.ON_TRACK -> "On Track"
+        BudgetStatus.NEAR_LIMIT -> "Near Limit"
+        BudgetStatus.OVER_BUDGET -> "Over Budget"
     }
 
     val animatedProgress by animateFloatAsState(
@@ -101,11 +121,12 @@ fun BudgetProgressBar(
         label = "BudgetProgress"
     )
 
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(1.dp, AtelierHairline, RoundedCornerShape(4.dp)),
+        shape = RoundedCornerShape(4.dp),
+        color = AtelierCanvas
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -113,54 +134,51 @@ fun BudgetProgressBar(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "${progress.budget.type.name.lowercase().replaceFirstChar { it.uppercase() }} Budget",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                )
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = statusColor.copy(alpha = 0.15f)
-                ) {
+                Column {
+                    SectionLabel(text = "Allocation Register")
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = when (progress.status) {
-                            BudgetStatus.ON_TRACK -> "On Track"
-                            BudgetStatus.NEAR_LIMIT -> "Near Limit"
-                            BudgetStatus.OVER_BUDGET -> "Over Budget"
-                        },
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = statusColor,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        text = "${progress.budget.type.name.lowercase().replaceFirstChar { it.uppercase() }} Budget",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = AtelierPrimaryInk
                     )
                 }
+
+                AtelierPillBadge(
+                    text = statusLabel,
+                    backgroundColor = statusBgColor,
+                    contentColor = statusColor
+                )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             LinearProgressIndicator(
                 progress = animatedProgress,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(2.dp)),
                 color = statusColor,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                trackColor = AtelierSurfaceChalk
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
             ) {
                 Text(
                     text = "Spent: ${MoneyUtils.format(progress.spentAmount)} (${progress.percentageUsed}%)",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = AtelierInkMuted
                 )
                 Text(
                     text = "Limit: ${MoneyUtils.format(progress.budget.amount)}",
                     style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = AtelierPrimaryInk
                 )
             }
         }
@@ -171,66 +189,75 @@ fun BudgetProgressBar(
 fun ExpenseItemCard(
     expense: Expense,
     categoryName: String = "Expense",
-    categoryColorHex: String = "#80B3FF",
+    categoryColorHex: String = "#5B7598",
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    val dateStr = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date(expense.date))
-    val categoryColor = try {
-        Color(android.graphics.Color.parseColor(categoryColorHex))
-    } catch (e: Exception) {
-        BrandPrimary
-    }
+    val dateStr = SimpleDateFormat("hh:mm a • dd MMM", Locale.getDefault()).format(Date(expense.date))
 
-    Card(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(vertical = 12.dp, horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Category Monogram/Icon
             Box(
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(36.dp)
                     .clip(CircleShape)
-                    .background(categoryColor.copy(alpha = 0.2f)),
+                    .background(AtelierPeriwinkleSubtle),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Category,
                     contentDescription = categoryName,
-                    tint = categoryColor,
-                    modifier = Modifier.size(22.dp)
+                    tint = AtelierPeriwinkle,
+                    modifier = Modifier.size(18.dp)
                 )
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
+            // Merchant / Particulars & Date
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = expense.title,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = AtelierPrimaryInk
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "$categoryName • $dateStr",
+                    text = "$dateStr • $categoryName",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = AtelierInkMuted
                 )
             }
 
-            Text(
-                text = "-${MoneyUtils.format(expense.amount, expense.currency)}",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            // Amount in Newsreader Serif with DR indicator
+            Row(
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    text = "↓ ${MoneyUtils.format(expense.amount, expense.currency)}",
+                    fontFamily = NewsreaderFontFamily,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = AtelierPrimaryInk
+                )
+                Spacer(modifier = Modifier.width(3.dp))
+                Text(
+                    text = "DR",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = AtelierInkMuted
+                )
+            }
         }
+        HairlineDivider()
     }
 }

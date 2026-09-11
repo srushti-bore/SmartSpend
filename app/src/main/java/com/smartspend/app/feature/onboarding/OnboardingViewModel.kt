@@ -17,6 +17,9 @@ data class OnboardingUiState(
     val authType: AuthType = AuthType.PIN,
     val credential: String = "",
     val confirmCredential: String = "",
+    val patternStep: Int = 1, // 1: draw pattern, 2: confirm pattern, 3: pattern confirmed
+    val isPatternError: Boolean = false,
+    val patternHint: String = "Connect at least 4 dots",
     val biometricEnabled: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
@@ -37,7 +40,15 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun onAuthTypeChange(authType: AuthType) {
-        _uiState.value = _uiState.value.copy(authType = authType, credential = "", confirmCredential = "", errorMessage = null)
+        _uiState.value = _uiState.value.copy(
+            authType = authType,
+            credential = "",
+            confirmCredential = "",
+            patternStep = 1,
+            isPatternError = false,
+            patternHint = "Connect at least 4 dots",
+            errorMessage = null
+        )
     }
 
     fun onCredentialChange(credential: String) {
@@ -46,6 +57,63 @@ class OnboardingViewModel @Inject constructor(
 
     fun onConfirmCredentialChange(confirm: String) {
         _uiState.value = _uiState.value.copy(confirmCredential = confirm, errorMessage = null)
+    }
+
+    fun onPatternStarted() {
+        _uiState.value = _uiState.value.copy(isPatternError = false, errorMessage = null)
+    }
+
+    fun onPatternCompleted(pattern: String) {
+        if (pattern.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                isPatternError = true,
+                errorMessage = "Connect at least 4 dots to form a pattern"
+            )
+            return
+        }
+
+        val state = _uiState.value
+        if (state.patternStep == 1) {
+            // First pattern recorded
+            _uiState.value = state.copy(
+                credential = pattern,
+                patternStep = 2,
+                patternHint = "Draw the pattern again to confirm",
+                errorMessage = null,
+                isPatternError = false
+            )
+        } else if (state.patternStep == 2) {
+            // Confirmation pattern
+            if (pattern == state.credential) {
+                _uiState.value = state.copy(
+                    confirmCredential = pattern,
+                    patternStep = 3,
+                    patternHint = "Pattern confirmed successfully!",
+                    errorMessage = null,
+                    isPatternError = false
+                )
+            } else {
+                _uiState.value = state.copy(
+                    isPatternError = true,
+                    patternStep = 1,
+                    credential = "",
+                    confirmCredential = "",
+                    patternHint = "Patterns did not match. Please draw again.",
+                    errorMessage = "Pattern mismatch. Try drawing again."
+                )
+            }
+        }
+    }
+
+    fun resetPattern() {
+        _uiState.value = _uiState.value.copy(
+            credential = "",
+            confirmCredential = "",
+            patternStep = 1,
+            isPatternError = false,
+            patternHint = "Connect at least 4 dots",
+            errorMessage = null
+        )
     }
 
     fun onBiometricToggle(enabled: Boolean) {
@@ -59,7 +127,7 @@ class OnboardingViewModel @Inject constructor(
             return
         }
         if (state.credential.isBlank()) {
-            _uiState.value = state.copy(errorMessage = "Please enter your ${state.authType.name}")
+            _uiState.value = state.copy(errorMessage = "Please set your ${state.authType.name}")
             return
         }
         if (state.credential != state.confirmCredential) {

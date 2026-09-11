@@ -27,6 +27,11 @@ object DatabaseModule {
         @ApplicationContext context: Context,
         keystoreManager: KeystoreManager
     ): SmartSpendDatabase {
+        try {
+            System.loadLibrary("sqlcipher")
+        } catch (t: Throwable) {
+            // Log or ignore if already loaded
+        }
         // Retrieve or generate SQLCipher database passphrase securely
         val passphrase = "smartspend_secure_local_db_key".toByteArray()
         val factory = SupportOpenHelperFactory(passphrase)

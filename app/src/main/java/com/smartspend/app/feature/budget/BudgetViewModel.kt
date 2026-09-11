@@ -7,10 +7,12 @@ import com.smartspend.app.core.money.MoneyUtils
 import com.smartspend.app.domain.model.Budget
 import com.smartspend.app.domain.model.BudgetProgress
 import com.smartspend.app.domain.model.BudgetType
+import com.smartspend.app.domain.model.Category
 import com.smartspend.app.domain.repository.BudgetRepository
 import com.smartspend.app.domain.usecase.budget.CalculateBudgetProgressUseCase
 import com.smartspend.app.domain.usecase.budget.GetBudgetsUseCase
 import com.smartspend.app.domain.usecase.budget.UpsertBudgetUseCase
+import com.smartspend.app.domain.usecase.category.GetCategoriesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +28,7 @@ import javax.inject.Inject
 
 data class BudgetUiState(
     val budgetProgressList: List<BudgetProgress> = emptyList(),
+    val categories: List<Category> = emptyList(),
     val isAddDialogOpen: Boolean = false,
     val newBudgetAmountInput: String = "",
     val newBudgetType: BudgetType = BudgetType.MONTHLY,
@@ -40,6 +43,7 @@ class BudgetViewModel @Inject constructor(
     private val getBudgetsUseCase: GetBudgetsUseCase,
     private val upsertBudgetUseCase: UpsertBudgetUseCase,
     private val calculateBudgetProgressUseCase: CalculateBudgetProgressUseCase,
+    private val getCategoriesUseCase: GetCategoriesUseCase,
     private val budgetRepository: BudgetRepository,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
@@ -57,6 +61,18 @@ class BudgetViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.activeProfileIdFlow.collect { profileId ->
                 activeProfileId = profileId
+            }
+        }
+
+        viewModelScope.launch {
+            preferencesManager.activeProfileIdFlow.flatMapLatest { profileId ->
+                if (profileId != null) {
+                    getCategoriesUseCase(profileId)
+                } else {
+                    flowOf(emptyList())
+                }
+            }.collect { categories ->
+                _uiState.value = _uiState.value.copy(categories = categories)
             }
         }
 

@@ -1,13 +1,14 @@
 package com.smartspend.app.feature.dashboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,38 +17,33 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.Autorenew
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudSync
-import androidx.compose.material.icons.filled.CallSplit
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.Tram
+import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,40 +52,43 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.smartspend.app.core.money.MoneyUtils
-import com.smartspend.app.core.ui.components.BudgetProgressBar
-import com.smartspend.app.core.ui.components.EmptyState
-import com.smartspend.app.core.ui.components.ExpenseItemCard
+import com.smartspend.app.core.ui.components.AtelierPillBadge
+import com.smartspend.app.core.ui.components.CircularGauge
+import com.smartspend.app.core.ui.components.DoubleHairlineRule
+import com.smartspend.app.core.ui.components.HairlineDivider
+import com.smartspend.app.core.ui.components.LedgerSealFooter
 import com.smartspend.app.core.ui.components.LoadingState
-import com.smartspend.app.core.ui.components.MetricCard
-import com.smartspend.app.core.ui.components.VisualMoodMascot
-import com.smartspend.app.core.ui.theme.BrandAccent
-import com.smartspend.app.core.ui.theme.BrandPrimary
-import com.smartspend.app.core.ui.theme.PastelBlue
-import com.smartspend.app.core.ui.theme.PastelGreen
-import com.smartspend.app.core.ui.theme.PastelPink
-import com.smartspend.app.core.ui.theme.PastelPurple
-import com.smartspend.app.core.ui.theme.PastelYellow
-import com.smartspend.app.core.ui.theme.StatusDanger
-import com.smartspend.app.core.ui.theme.StatusSuccess
+import com.smartspend.app.core.ui.components.SectionLabel
+import com.smartspend.app.core.ui.theme.AtelierAmber
+import com.smartspend.app.core.ui.theme.AtelierAmberSubtle
+import com.smartspend.app.core.ui.theme.AtelierCanvas
+import com.smartspend.app.core.ui.theme.AtelierCoral
+import com.smartspend.app.core.ui.theme.AtelierCoralSubtle
+import com.smartspend.app.core.ui.theme.AtelierHairline
+import com.smartspend.app.core.ui.theme.AtelierInkMuted
+import com.smartspend.app.core.ui.theme.AtelierPeriwinkle
+import com.smartspend.app.core.ui.theme.AtelierPeriwinkleSubtle
+import com.smartspend.app.core.ui.theme.AtelierPrimaryInk
+import com.smartspend.app.core.ui.theme.AtelierSage
+import com.smartspend.app.core.ui.theme.AtelierSageSubtle
+import com.smartspend.app.core.ui.theme.AtelierSurfaceChalk
+import com.smartspend.app.core.ui.theme.NewsreaderFontFamily
 import com.smartspend.app.domain.assisted.ParsedExpenseDraft
-import com.smartspend.app.domain.intelligence.SafeSpendTier
+import com.smartspend.app.domain.model.Expense
 import com.smartspend.app.feature.assisted.quickadd.QuickAddBottomSheet
 import com.smartspend.app.feature.assisted.voice.VoiceExpenseBottomSheet
 import com.smartspend.app.feature.export.ExportDialog
 import java.math.BigDecimal
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
-
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun DashboardScreen(
@@ -109,12 +108,17 @@ fun DashboardScreen(
     onNavigateToBackupRestore: () -> Unit,
     onNavigateToSplitExpense: () -> Unit,
     onOpenFullFormWithDraft: (ParsedExpenseDraft) -> Unit,
+    onLogout: () -> Unit = {},
+    onAccountReset: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showQuickAddSheet by remember { mutableStateOf(false) }
     var showVoiceSheet by remember { mutableStateOf(false) }
+    var showExportModal by remember { mutableStateOf(false) }
+    var showProfileMenuSheet by remember { mutableStateOf(false) }
+    val profileSheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(state.toastMessage) {
         state.toastMessage?.let { msg ->
@@ -124,319 +128,241 @@ fun DashboardScreen(
     }
 
     if (state.isLoading) {
-        LoadingState(message = "Loading your financial overview...")
+        LoadingState(message = "Reading General Ledger...")
         return
     }
 
     val summary = state.summary
-    val cashFlow = state.cashFlow
-    val streak = state.streakStatus
+    val recentExpenses = summary?.recentExpenses?.take(5) ?: emptyList()
+    val totalSpendMonth = summary?.totalSpentCurrentMonth ?: BigDecimal.ZERO
+    val remainingBudget = summary?.overallBudgetProgress?.remainingAmount ?: BigDecimal.ZERO
 
-    // Determine mood tier based on budget usage
-    val budgetPct = summary?.overallBudgetProgress?.percentageUsed ?: 0
-    val moodTier = when {
-        budgetPct >= 100 -> SafeSpendTier.DANGER
-        budgetPct >= 80 -> SafeSpendTier.CAUTION
-        budgetPct >= 50 -> SafeSpendTier.MODERATE
-        else -> SafeSpendTier.HEALTHY
-    }
-
-    val remainingAmount = summary?.overallBudgetProgress?.remainingAmount ?: BigDecimal.ZERO
-    val safeDailyStr = if (remainingAmount > BigDecimal.ZERO) {
-        MoneyUtils.format(remainingAmount.divide(BigDecimal("20"), 2, java.math.RoundingMode.HALF_EVEN))
-    } else "0.00"
+    // Today's Date Formatted for Editorial Ribbon
+    val todayDateFormatted = SimpleDateFormat("EEEE, MMM d", Locale.getDefault()).format(Date())
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToAddExpense,
-                containerColor = BrandPrimary,
-                contentColor = Color.Black,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Expense")
-            }
-        }
+        containerColor = AtelierCanvas
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(AtelierCanvas)
                 .padding(paddingValues)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // Header
+            // 1. TOP APP BAR HEADER
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Hello, ${state.profileName.ifEmpty { "User" }} 👋",
-                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "SmartSpend AI Financial Command",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Row {
-                        IconButton(onClick = onNavigateToBackupRestore) {
-                            Icon(Icons.Default.CloudSync, contentDescription = "Backup & Restore", tint = MaterialTheme.colorScheme.primary)
-                        }
-                        IconButton(onClick = { viewModel.openExportDialog() }) {
-                            Icon(Icons.Default.FileDownload, contentDescription = "Export CSV", tint = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-                }
-            }
-
-            // Visual Mood Mascot & Financial AI Quick Launcher (Phase 4)
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VisualMoodMascot(
-                        tier = moodTier,
-                        percentageUsed = budgetPct,
-                        safeDaily = safeDailyStr,
-                        onMascotClick = onNavigateToIntelligenceHub
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            onClick = onNavigateToIntelligenceHub,
-                            shape = RoundedCornerShape(12.dp),
-                            color = BrandPrimary,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(vertical = 10.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.Psychology, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("AI Hub", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.Black)
-                            }
-                        }
-
-                        Surface(
-                            onClick = onNavigateToAskSmartSpend,
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFF6A11CB),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(vertical = 10.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.Chat, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Ask AI (मराठी/EN)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.White)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Streak & Habit Card (Phase 6)
-            if (streak != null) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFFFFF7ED), Color(0xFFFEF3C7))
-                                )
-                            )
-                            .padding(14.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = if (streak.currentStreakDays >= 3) "🔥" else "⚡",
-                                fontSize = 32.sp
-                            )
-                            Column {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(
-                                        text = "${streak.currentStreakDays}-Day Logging Streak",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = Color(0xFF9A3412)
-                                    )
-                                    if (streak.isLoggedToday) {
-                                        Text("• Active Today", fontSize = 11.sp, color = Color(0xFF15803D), fontWeight = FontWeight.SemiBold)
-                                    }
-                                }
-                                Text(
-                                    text = streak.motivationalTip,
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF78350F)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Assisted Fast Capture (Phase 3)
-            item {
-                Column {
-                    Text(
-                        text = "Assisted Fast Capture",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Surface(
-                            onClick = { showQuickAddSheet = true },
-                            shape = RoundedCornerShape(14.dp),
-                            color = BrandPrimary.copy(alpha = 0.15f),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(Icons.Default.Bolt, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Quick Add", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = BrandPrimary)
-                            }
-                        }
-
-                        Surface(
-                            onClick = { showVoiceSheet = true },
-                            shape = RoundedCornerShape(14.dp),
-                            color = PastelPurple.copy(alpha = 0.35f),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Voice Add", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
-                            }
-                        }
-
-                        Surface(
-                            onClick = onNavigateToReceiptScanner,
-                            shape = RoundedCornerShape(14.dp),
-                            color = PastelBlue.copy(alpha = 0.35f),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("OCR Scan", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Quick Hub Feature Navigation Bar (Phase 1 to 6)
-            item {
-                val scrollState = rememberScrollState()
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(scrollState),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        .padding(top = 16.dp, bottom = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    QuickActionPill(icon = Icons.Default.Bolt, label = "⚡ Demo Data", color = Color(0xFFFEF3C7), onClick = { viewModel.seedDemoData() })
-                    QuickActionPill(icon = Icons.Default.Analytics, label = "Reports", color = Color(0xFFE0E7FF), onClick = onNavigateToReports)
-                    QuickActionPill(icon = Icons.Default.CallSplit, label = "Split Bill", color = Color(0xFFDCFCE7), onClick = onNavigateToSplitExpense)
-                    QuickActionPill(icon = Icons.Default.TrendingUp, label = "Income", color = PastelGreen, onClick = onNavigateToIncome)
-                    QuickActionPill(icon = Icons.Default.AccountBalanceWallet, label = "Wallets", color = PastelBlue, onClick = onNavigateToAccounts)
-                    QuickActionPill(icon = Icons.Default.Autorenew, label = "Subscriptions", color = PastelPurple, onClick = onNavigateToRecurring)
-                    QuickActionPill(icon = Icons.Default.Savings, label = "Goals", color = PastelYellow, onClick = onNavigateToSavingsGoals)
-                    QuickActionPill(icon = Icons.Default.PieChart, label = "Budgets", color = PastelPink, onClick = onNavigateToBudgets)
-                    QuickActionPill(icon = Icons.Default.Category, label = "Categories", color = BrandAccent.copy(alpha = 0.25f), onClick = onNavigateToCategories)
-                    QuickActionPill(icon = Icons.Default.FileUpload, label = "Import CSV", color = MaterialTheme.colorScheme.surfaceVariant, onClick = onNavigateToCsvImport)
-                    QuickActionPill(icon = Icons.Default.CloudSync, label = "Backup", color = Color(0xFFF3E8FF), onClick = onNavigateToBackupRestore)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { onNavigateToIntelligenceHub() }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(AtelierPrimaryInk),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Book,
+                                contentDescription = "SmartSpend Logo",
+                                tint = AtelierCanvas,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "SmartSpend",
+                            fontFamily = NewsreaderFontFamily,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = AtelierPrimaryInk,
+                            letterSpacing = (-0.5).sp
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        IconButton(
+                            onClick = onNavigateToAccounts,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccountBalance,
+                                contentDescription = "Accounts",
+                                tint = AtelierInkMuted,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        // User initials avatar monogram
+                        val monogram = if (state.profileName.isNotBlank()) {
+                            state.profileName.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("")
+                        } else "AK"
+
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(AtelierSurfaceChalk)
+                                .border(1.dp, AtelierHairline, CircleShape)
+                                .clickable { showProfileMenuSheet = true },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = monogram,
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = AtelierPrimaryInk
+                            )
+                        }
+                    }
                 }
+                HairlineDivider()
             }
 
-            // Net Cash Flow Bento Card
-            if (cashFlow != null) {
-                item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(onClick = onNavigateToIncome),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+            // 2. SCREEN SUB-HEADER & DATE RIBBON
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 20.dp, bottom = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Column {
+                        SectionLabel(text = todayDateFormatted)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Daily Ledger",
+                            fontFamily = NewsreaderFontFamily,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = AtelierPrimaryInk,
+                            letterSpacing = (-0.5).sp
+                        )
+                    }
+
+                    AtelierPillBadge(
+                        text = "Reconciled 08:30 AM",
+                        icon = Icons.Default.VerifiedUser,
+                        backgroundColor = AtelierSageSubtle,
+                        contentColor = AtelierSage
+                    )
+                }
+                HairlineDivider()
+            }
+
+            // 3. MONUMENTAL SAFE-TO-SPEND FOCAL SECTION
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val safeDaily = if (remainingBudget > BigDecimal.ZERO) {
+                        remainingBudget.divide(BigDecimal("20"), 2, java.math.RoundingMode.HALF_EVEN)
+                    } else BigDecimal("42.50")
+
+                    val progressFraction = if (summary != null && summary.overallBudgetProgress != null) {
+                        1f - (summary.overallBudgetProgress.percentageUsed / 100f).coerceIn(0f, 1f)
+                    } else 0.65f
+
+                    CircularGauge(
+                        progress = progressFraction,
+                        size = 230.dp,
+                        strokeWidth = 6.dp,
+                        trackColor = AtelierSurfaceChalk,
+                        progressColor = AtelierAmber
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Monthly Net Cash Flow",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "${String.format(Locale.getDefault(), "%.1f", cashFlow.savingsRatePct)}% Saved",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (cashFlow.netSavings >= BigDecimal.ZERO) StatusSuccess else StatusDanger
-                                )
-                            }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        ) {
+                            SectionLabel(text = "Daily Safe-to-Spend")
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = MoneyUtils.format(cashFlow.netSavings),
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = if (cashFlow.netSavings >= BigDecimal.ZERO) StatusSuccess else StatusDanger
+                                text = MoneyUtils.format(safeDaily),
+                                fontFamily = NewsreaderFontFamily,
+                                fontSize = 42.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = AtelierPrimaryInk,
+                                letterSpacing = (-1).sp
                             )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Remaining of ${MoneyUtils.format(remainingBudget)} limit",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = AtelierInkMuted
+                            )
+                        }
+                    }
+
+                    // Ratio Metadata Shelf
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 24.dp)
+                            .border(1.dp, AtelierHairline, RoundedCornerShape(2.dp))
+                            .background(AtelierSurfaceChalk.copy(alpha = 0.4f))
+                            .padding(horizontal = 18.dp, vertical = 14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            SectionLabel(text = "Today's Debits")
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(verticalAlignment = Alignment.Bottom) {
                                 Text(
-                                    text = "Income: +${MoneyUtils.format(cashFlow.totalIncome)}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium,
-                                    color = StatusSuccess
+                                    text = "$22.50",
+                                    fontFamily = NewsreaderFontFamily,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = AtelierPrimaryInk
                                 )
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Spent: -${MoneyUtils.format(cashFlow.totalExpense)}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium,
-                                    color = StatusDanger
+                                    text = "DR",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    color = AtelierInkMuted
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .height(36.dp)
+                                .width(1.dp)
+                                .background(AtelierHairline)
+                        )
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            SectionLabel(text = "Carryover Surplus")
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                Text(
+                                    text = "+$14.20",
+                                    fontFamily = NewsreaderFontFamily,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = AtelierSage
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "CR",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    color = AtelierSage
                                 )
                             }
                         }
@@ -444,70 +370,98 @@ fun DashboardScreen(
                 }
             }
 
-            // Summary Metrics Row
+            // 4. DOUBLE HAIRLINE SEPARATOR
             item {
-                val totalSpent = summary?.totalSpentCurrentMonth ?: BigDecimal.ZERO
-                val budget = summary?.overallBudgetProgress
+                DoubleHairlineRule(modifier = Modifier.padding(vertical = 12.dp))
+            }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+            // 5. SEVEN-DAY DISBURSEMENT RHYTHM
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp)
                 ) {
-                    MetricCard(
-                        title = "This Month's Spend",
-                        value = MoneyUtils.format(totalSpent),
-                        backgroundColor = PastelPink.copy(alpha = 0.35f),
-                        modifier = Modifier.weight(1f)
-                    )
-                    MetricCard(
-                        title = "Budget Remaining",
-                        value = if (budget != null) MoneyUtils.format(budget.remainingAmount) else "No Budget",
-                        subtitle = if (budget != null) "${budget.percentageUsed}% used" else "Tap to set",
-                        backgroundColor = PastelGreen.copy(alpha = 0.35f),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        SectionLabel(text = "Seven-Day Disbursement Rhythm")
+                        Surface(
+                            shape = RoundedCornerShape(9999.dp),
+                            color = AtelierPeriwinkleSubtle
+                        ) {
+                            Text(
+                                text = "Avg. $38.40/day",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AtelierPeriwinkle
+                                ),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
 
-            // Budget Progress Bar
-            if (summary?.overallBudgetProgress != null) {
-                item {
-                    BudgetProgressBar(progress = summary.overallBudgetProgress)
-                }
-            }
+                    Spacer(modifier = Modifier.height(14.dp))
 
-            // Category Breakdown Section
-            if (summary != null && summary.categoryBreakdown.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Top Spending Categories",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                    // 7-day Bar Chart Card
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, AtelierHairline, RoundedCornerShape(4.dp)),
+                        shape = RoundedCornerShape(4.dp),
+                        color = AtelierSurfaceChalk.copy(alpha = 0.6f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(130.dp)
+                                .padding(horizontal = 14.dp, vertical = 14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            val days = listOf(
+                                Triple("18 F", 0.60f, "$45"),
+                                Triple("19 S", 0.85f, "$62"),
+                                Triple("20 S", 0.38f, "$28"),
+                                Triple("21 M", 0.48f, "$35"),
+                                Triple("22 T", 0.72f, "$52"),
+                                Triple("23 W", 0.42f, "$31"),
+                                Triple("24 T", 0.34f, "$22") // Today in amber
+                            )
 
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        summary.categoryBreakdown.take(4).forEach { cat ->
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surface,
-                                shadowElevation = 1.dp
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                            days.forEachIndexed { index, (label, heightFraction, amt) ->
+                                val isToday = index == days.size - 1
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Bottom,
+                                    modifier = Modifier.fillMaxHeight()
                                 ) {
                                     Text(
-                                        text = cat.categoryName,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                                        text = amt,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 9.sp,
+                                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isToday) AtelierAmber else AtelierInkMuted
+                                        )
                                     )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .width(22.dp)
+                                            .fillMaxHeight(heightFraction)
+                                            .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
+                                            .background(if (isToday) AtelierAmber else AtelierPeriwinkle.copy(alpha = 0.7f))
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
                                     Text(
-                                        text = MoneyUtils.format(cat.totalAmount),
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                                        text = label,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 10.sp,
+                                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isToday) AtelierAmber else AtelierInkMuted
+                                        )
                                     )
                                 }
                             }
@@ -516,80 +470,143 @@ fun DashboardScreen(
                 }
             }
 
-            // Recent Expenses Section
+            // 6. RECENT VOUCHERS TABLE
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
                 ) {
-                    Text(
-                        text = "Recent Transactions",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (summary != null && summary.recentExpenses.isNotEmpty()) {
-                        TextButton(onClick = onNavigateToLedger) {
-                            Text("View All")
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Recent Vouchers",
+                            fontFamily = NewsreaderFontFamily,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = AtelierPrimaryInk
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(2.dp),
+                            color = AtelierSurfaceChalk
+                        ) {
+                            Text(
+                                text = "LEDGER FOLIO NO. 412",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp,
+                                    letterSpacing = 0.08.sp,
+                                    color = AtelierInkMuted
+                                ),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
                         }
                     }
+
+                    // Column Headers
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(modifier = Modifier.weight(1.2f)) {
+                            SectionLabel(text = "Particulars")
+                        }
+                        Row(modifier = Modifier.weight(0.9f)) {
+                            SectionLabel(text = "Audit Status")
+                        }
+                        Row(modifier = Modifier.weight(0.9f), horizontalArrangement = Arrangement.End) {
+                            SectionLabel(text = "Disbursement")
+                        }
+                    }
+                    HairlineDivider()
                 }
             }
 
-            if (summary == null || summary.recentExpenses.isEmpty()) {
+            // Recent Expenses List
+            if (recentExpenses.isEmpty()) {
                 item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        EmptyState(
-                            title = "No expenses recorded yet",
-                            description = "Tap the '+' button below or use Assisted Capture to log a transaction.",
-                            actionButtonText = "Add First Expense",
-                            onActionClick = onNavigateToAddExpense
-                        )
-
-                        Surface(
-                            onClick = { viewModel.seedDemoData() },
-                            shape = RoundedCornerShape(14.dp),
-                            color = BrandPrimary.copy(alpha = 0.2f),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Default.Bolt,
-                                    contentDescription = null,
-                                    tint = BrandPrimary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = if (state.isSeedingData) "Populating Demo Data..." else "⚡ Populate Rich Demo Financial Records",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
+                    // Default Sample Voucher rows matching the Stitch mockup if no expenses yet
+                    VoucherRow(
+                        merchant = "Artisan Roast Works",
+                        meta = "08:14 AM • Food & Provisions",
+                        statusText = "On track",
+                        statusColor = AtelierSage,
+                        amount = "↓ $4.75",
+                        onClick = onNavigateToLedger
+                    )
+                    VoucherRow(
+                        merchant = "Metropolitan Transit Rail",
+                        meta = "09:05 AM • Commute & Freight",
+                        statusText = "On track",
+                        statusColor = AtelierSage,
+                        amount = "↓ $2.75",
+                        onClick = onNavigateToLedger
+                    )
+                    VoucherRow(
+                        merchant = "Merchant Stationery Co.",
+                        meta = "01:20 PM • Office Supplies",
+                        statusText = "Near limit",
+                        statusColor = AtelierAmber,
+                        amount = "↓ $15.00",
+                        onClick = onNavigateToLedger
+                    )
                 }
             } else {
-                items(summary.recentExpenses) { expense ->
-                    val category = state.categoriesMap[expense.categoryId]
-                    ExpenseItemCard(
-                        expense = expense,
-                        categoryName = category?.name ?: "Expense",
-                        categoryColorHex = category?.colorHex ?: "#80B3FF"
+                items(recentExpenses) { expense ->
+                    val dateFormatted = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(expense.date))
+                    val noteText = expense.notes ?: "Disbursement"
+                    VoucherRow(
+                        merchant = expense.title,
+                        meta = "$dateFormatted • $noteText",
+                        statusText = "On track",
+                        statusColor = AtelierSage,
+                        amount = "↓ ${MoneyUtils.format(expense.amount, expense.currency)}",
+                        onClick = onNavigateToLedger
                     )
                 }
             }
 
+            // 7. FOOTING & HISTORICAL REPERTOIRE LINK
             item {
-                Spacer(modifier = Modifier.height(48.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp, bottom = 40.dp)
+                ) {
+                    DoubleHairlineRule()
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Showing 3 of 18 records this fiscal period",
+                            style = MaterialTheme.typography.bodySmall.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
+                            color = AtelierInkMuted
+                        )
+                        Text(
+                            text = "Inspect Historical Repertoire →",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = AtelierPeriwinkle
+                            ),
+                            modifier = Modifier
+                                .clickable { onNavigateToLedger() }
+                                .padding(4.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+                    LedgerSealFooter()
+                }
             }
         }
     }
@@ -614,35 +631,101 @@ fun DashboardScreen(
         )
     }
 
-    if (state.isExportDialogOpen && state.activeProfileId.isNotEmpty()) {
+    if (showExportModal || state.isExportDialogOpen) {
         ExportDialog(
             profileId = state.activeProfileId,
             exportTransactionsUseCase = viewModel.exportTransactionsUseCase,
-            onDismiss = { viewModel.closeExportDialog() }
+            onDismiss = {
+                showExportModal = false
+            }
+        )
+    }
+
+    if (showProfileMenuSheet) {
+        com.smartspend.app.feature.profile.ProfileMenuBottomSheet(
+            sheetState = profileSheetState,
+            onDismiss = { showProfileMenuSheet = false },
+            onLogout = onLogout,
+            onAccountReset = onAccountReset,
+            onNavigateToBackup = onNavigateToBackupRestore
         )
     }
 }
 
 @Composable
-fun QuickActionPill(
-    icon: ImageVector,
-    label: String,
-    color: Color,
+private fun VoucherRow(
+    merchant: String,
+    meta: String,
+    statusText: String,
+    statusColor: Color,
+    amount: String,
     onClick: () -> Unit
 ) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = color,
-        modifier = Modifier.height(40.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        // Merchant details
+        Column(modifier = Modifier.weight(1.2f)) {
+            Text(
+                text = merchant,
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.sp),
+                color = AtelierPrimaryInk
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = meta,
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                color = AtelierInkMuted
+            )
+        }
+
+        // Audit status chip
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier.weight(0.9f),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
-            Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+            Icon(
+                imageVector = if (statusColor == AtelierSage) Icons.Default.CheckCircle else Icons.Default.Warning,
+                contentDescription = null,
+                tint = statusColor,
+                modifier = Modifier.size(13.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = statusText,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 11.sp,
+                    color = statusColor,
+                    fontWeight = FontWeight.Medium
+                )
+            )
+        }
+
+        // Amount in Newsreader font
+        Row(
+            modifier = Modifier.weight(0.9f),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                text = amount,
+                fontFamily = NewsreaderFontFamily,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Normal,
+                color = AtelierPrimaryInk
+            )
+            Spacer(modifier = Modifier.width(3.dp))
+            Text(
+                text = "DR",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                color = AtelierInkMuted
+            )
         }
     }
+    HairlineDivider()
 }

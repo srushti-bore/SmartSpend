@@ -1,6 +1,6 @@
-# Paradox Android App — Agent Rules
+# SmartSpend Android App — Agent Rules
 
-You are working on Paradox.
+You are working on SmartSpend
 
 Follow these rules:
 

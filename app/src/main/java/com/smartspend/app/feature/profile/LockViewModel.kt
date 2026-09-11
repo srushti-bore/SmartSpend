@@ -18,6 +18,7 @@ data class LockUiState(
     val activeProfile: Profile? = null,
     val credentialInput: String = "",
     val errorMessage: String? = null,
+    val isPatternError: Boolean = false,
     val isUnlocked: Boolean = false,
     val isLoading: Boolean = true
 )
@@ -56,7 +57,34 @@ class LockViewModel @Inject constructor(
     }
 
     fun onCredentialChange(input: String) {
-        _uiState.value = _uiState.value.copy(credentialInput = input, errorMessage = null)
+        _uiState.value = _uiState.value.copy(credentialInput = input, errorMessage = null, isPatternError = false)
+    }
+
+    fun onPatternStarted() {
+        _uiState.value = _uiState.value.copy(errorMessage = null, isPatternError = false)
+    }
+
+    fun onPatternCompleted(pattern: String) {
+        if (pattern.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "Connect at least 4 dots to unlock",
+                isPatternError = true
+            )
+            return
+        }
+
+        val profile = _uiState.value.activeProfile ?: return
+        viewModelScope.launch {
+            val success = authenticateProfileUseCase(profile.id, pattern)
+            if (success) {
+                _uiState.value = _uiState.value.copy(isUnlocked = true, errorMessage = null, isPatternError = false)
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Incorrect pattern. Try again.",
+                    isPatternError = true
+                )
+            }
+        }
     }
 
     fun unlock() {

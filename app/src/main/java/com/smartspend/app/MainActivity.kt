@@ -10,6 +10,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.smartspend.app.core.ui.theme.SmartSpendTheme
@@ -40,11 +42,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Protect financial screens against recents preview and screenshots per SRS §7.1 & §24
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE
-        )
+        // Protect financial screens against recents preview and screenshots in Release builds per SRS §7.1 & §24
+        if (!BuildConfig.DEBUG) {
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE
+            )
+        }
 
         handleDemoSeedIntent(intent)
 
@@ -58,7 +62,14 @@ class MainActivity : ComponentActivity() {
         } else null
 
         setContent {
-            SmartSpendTheme {
+            val themeMode by preferencesManager.themeModeFlow.collectAsState(initial = "SYSTEM")
+            val isDark = when (themeMode) {
+                "DARK" -> true
+                "LIGHT" -> false
+                else -> androidx.compose.foundation.isSystemInDarkTheme()
+            }
+
+            SmartSpendTheme(darkTheme = isDark) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

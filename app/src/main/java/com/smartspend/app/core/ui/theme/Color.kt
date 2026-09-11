@@ -1,31 +1,132 @@
 package com.smartspend.app.core.ui.theme
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 
-// Pastel Modern Theme Palette
-val BrandPrimary = Color(0xFF4361EE)
-val BrandSecondary = Color(0xFF3F37C9)
-val BrandAccent = Color(0xFF4895EF)
-val BrandBackground = Color(0xFFF8F9FA)
-val BrandSurface = Color(0xFFFFFFFF)
-val BrandSurfaceVariant = Color(0xFFF1F3F5)
+// Light Palette Tokens
+val LightAtelierCanvas = Color(0xFFFBFBF9)
+val LightAtelierSurfaceChalk = Color(0xFFF4F3EF)
+val LightAtelierSurfaceChalkHigh = Color(0xFFE8E8E6)
+val LightAtelierHairline = Color(0xFFE2E0D8)
+val LightAtelierHairlineDark = Color(0xFFC5C6CB)
+val LightAtelierPrimaryInk = Color(0xFF1E232A)
+val LightAtelierInkMuted = Color(0xFF686E78)
+val LightAtelierInkSubtle = Color(0xFF9E9E98)
 
-// Status Colors
-val StatusSuccess = Color(0xFF2EC4B6)
-val StatusWarning = Color(0xFFFF9F1C)
-val StatusDanger = Color(0xFFE71D36)
-val StatusInfo = Color(0xFF4CC9F0)
+// Dark Palette Tokens
+val DarkAtelierCanvas = Color(0xFF14171B)
+val DarkAtelierSurfaceChalk = Color(0xFF1E2228)
+val DarkAtelierSurfaceChalkHigh = Color(0xFF282D36)
+val DarkAtelierHairline = Color(0xFF2E343E)
+val DarkAtelierHairlineDark = Color(0xFF454E5C)
+val DarkAtelierPrimaryInk = Color(0xFFF0F1F3)
+val DarkAtelierInkMuted = Color(0xFFA0A6B2)
+val DarkAtelierInkSubtle = Color(0xFF757C8A)
 
-// Text Colors
-val TextPrimary = Color(0xFF212529)
-val TextSecondary = Color(0xFF6C757D)
-val TextTertiary = Color(0xFFADB5BD)
+// Dynamic Atelier Ledger Foundation Tokens (Reactive to Dark/Light Theme)
+val AtelierCanvas: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.canvas
 
-// Category Pastel Accents
-val PastelPink = Color(0xFFFFB3BA)
-val PastelBlue = Color(0xFFBAE1FF)
-val PastelGreen = Color(0xFFBAFFC9)
-val PastelYellow = Color(0xFFFFFFBA)
-val PastelPurple = Color(0xFFE8BAFF)
-val PastelOrange = Color(0xFFFFDFBA)
-val PastelTeal = Color(0xFFA0E7E5)
+val AtelierSurfaceChalk: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.surfaceChalk
+
+val AtelierSurfaceChalkHigh: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.surfaceChalkHigh
+
+val AtelierHairline: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.hairline
+
+val AtelierHairlineDark: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.hairlineDark
+
+val AtelierPrimaryInk: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.primaryInk
+
+val AtelierInkMuted: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.inkMuted
+
+val AtelierInkSubtle: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.inkSubtle
+
+// Semantic Accents (Pastel annotations)
+val AtelierAmber: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.amber
+
+val AtelierAmberSubtle: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.amberSubtle
+
+val AtelierPeriwinkle: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.periwinkle
+
+val AtelierPeriwinkleSubtle: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.periwinkleSubtle
+
+val AtelierCoral: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.coral
+
+val AtelierCoralSubtle: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.coralSubtle
+
+val AtelierSage: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.sage
+
+val AtelierSageSubtle: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.sageSubtle
+
+// Compatibility mappings for existing codebase references
+val BrandPrimary: Color @Composable @ReadOnlyComposable get() = AtelierPrimaryInk
+val BrandSecondary: Color @Composable @ReadOnlyComposable get() = AtelierPeriwinkle
+val BrandAccent: Color @Composable @ReadOnlyComposable get() = AtelierAmber
+val BrandBackground: Color @Composable @ReadOnlyComposable get() = AtelierCanvas
+val BrandSurface: Color @Composable @ReadOnlyComposable get() = AtelierCanvas
+val BrandSurfaceVariant: Color @Composable @ReadOnlyComposable get() = AtelierSurfaceChalk
+
+val StatusSuccess: Color @Composable @ReadOnlyComposable get() = AtelierSage
+val StatusWarning: Color @Composable @ReadOnlyComposable get() = AtelierAmber
+val StatusDanger: Color @Composable @ReadOnlyComposable get() = AtelierCoral
+val StatusInfo: Color @Composable @ReadOnlyComposable get() = AtelierPeriwinkle
+
+val TextPrimary: Color @Composable @ReadOnlyComposable get() = AtelierPrimaryInk
+val TextSecondary: Color @Composable @ReadOnlyComposable get() = AtelierInkMuted
+val TextTertiary: Color @Composable @ReadOnlyComposable get() = AtelierInkSubtle
+
+val PastelPink: Color @Composable @ReadOnlyComposable get() = AtelierCoralSubtle
+val PastelBlue: Color @Composable @ReadOnlyComposable get() = AtelierPeriwinkleSubtle
+val PastelGreen: Color @Composable @ReadOnlyComposable get() = AtelierSageSubtle
+val PastelYellow: Color @Composable @ReadOnlyComposable get() = AtelierAmberSubtle
+val PastelPurple = Color(0xFFEADDF2)
+val PastelOrange: Color @Composable @ReadOnlyComposable get() = AtelierAmberSubtle
+val PastelTeal: Color @Composable @ReadOnlyComposable get() = AtelierSageSubtle
