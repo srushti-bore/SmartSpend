@@ -55,4 +55,19 @@ object DatabaseModule {
 
     @Provides
     fun provideBudgetDao(db: SmartSpendDatabase): BudgetDao = db.budgetDao()
+
+    @Provides
+    fun provideIncomeDao(db: SmartSpendDatabase): com.smartspend.app.data.local.dao.IncomeDao = db.incomeDao()
+
+    @Provides
+    fun provideAccountDao(db: SmartSpendDatabase): com.smartspend.app.data.local.dao.AccountDao = db.accountDao()
+
+    @Provides
+    fun provideRecurringExpenseDao(db: SmartSpendDatabase): com.smartspend.app.data.local.dao.RecurringExpenseDao = db.recurringExpenseDao()
+
+    @Provides
+    fun provideSavingsGoalDao(db: SmartSpendDatabase): com.smartspend.app.data.local.dao.SavingsGoalDao = db.savingsGoalDao()
+
+    @Provides
+    fun provideSavingsGoalContributionDao(db: SmartSpendDatabase): com.smartspend.app.data.local.dao.SavingsGoalContributionDao = db.savingsGoalContributionDao()
 }

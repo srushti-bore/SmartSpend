@@ -42,4 +42,32 @@ class Converters {
 
     @TypeConverter
     fun toBudgetType(value: String?): BudgetType? = value?.let { BudgetType.valueOf(it) }
+
+    @TypeConverter
+    fun fromIncomeSource(value: com.smartspend.app.domain.model.IncomeSource?): String? = value?.name
+
+    @TypeConverter
+    fun toIncomeSource(value: String?): com.smartspend.app.domain.model.IncomeSource? =
+        value?.let { com.smartspend.app.domain.model.IncomeSource.valueOf(it) }
+
+    @TypeConverter
+    fun fromAccountType(value: com.smartspend.app.domain.model.AccountType?): String? = value?.name
+
+    @TypeConverter
+    fun toAccountType(value: String?): com.smartspend.app.domain.model.AccountType? =
+        value?.let { com.smartspend.app.domain.model.AccountType.valueOf(it) }
+
+    @TypeConverter
+    fun fromRecurringFrequency(value: com.smartspend.app.domain.model.RecurringFrequency?): String? = value?.name
+
+    @TypeConverter
+    fun toRecurringFrequency(value: String?): com.smartspend.app.domain.model.RecurringFrequency? =
+        value?.let { com.smartspend.app.domain.model.RecurringFrequency.valueOf(it) }
+
+    @TypeConverter
+    fun fromContributionType(value: com.smartspend.app.domain.model.ContributionType?): String? = value?.name
+
+    @TypeConverter
+    fun toContributionType(value: String?): com.smartspend.app.domain.model.ContributionType? =
+        value?.let { com.smartspend.app.domain.model.ContributionType.valueOf(it) }
 }

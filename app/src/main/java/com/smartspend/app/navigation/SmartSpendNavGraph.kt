@@ -6,13 +6,17 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.smartspend.app.feature.account.AccountScreen
 import com.smartspend.app.feature.budget.BudgetScreen
 import com.smartspend.app.feature.category.CategoryScreen
 import com.smartspend.app.feature.dashboard.DashboardScreen
 import com.smartspend.app.feature.expense.AddEditExpenseScreen
 import com.smartspend.app.feature.expense.LedgerScreen
+import com.smartspend.app.feature.income.IncomeScreen
 import com.smartspend.app.feature.onboarding.OnboardingScreen
 import com.smartspend.app.feature.profile.LockScreen
+import com.smartspend.app.feature.recurring.RecurringExpenseScreen
+import com.smartspend.app.feature.savingsgoal.SavingsGoalScreen
 
 @Composable
 fun SmartSpendNavGraph(
@@ -61,6 +65,18 @@ fun SmartSpendNavGraph(
                 },
                 onNavigateToCategories = {
                     navController.navigate(Screen.Categories.route)
+                },
+                onNavigateToIncome = {
+                    navController.navigate(Screen.Income.route)
+                },
+                onNavigateToAccounts = {
+                    navController.navigate(Screen.Accounts.route)
+                },
+                onNavigateToRecurring = {
+                    navController.navigate(Screen.Recurring.route)
+                },
+                onNavigateToSavingsGoals = {
+                    navController.navigate(Screen.SavingsGoals.route)
                 }
             )
         }
@@ -97,6 +113,30 @@ fun SmartSpendNavGraph(
 
         composable(Screen.Categories.route) {
             CategoryScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Income.route) {
+            IncomeScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Accounts.route) {
+            AccountScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Recurring.route) {
+            RecurringExpenseScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.SavingsGoals.route) {
+            SavingsGoalScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

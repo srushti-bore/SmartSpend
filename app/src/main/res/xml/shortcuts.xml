@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="add_expense"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_input_add"
+        android:shortcutShortLabel="@string/shortcut_add_expense"
+        android:shortcutLongLabel="@string/shortcut_add_expense">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.smartspend.app"
+            android:targetClass="com.smartspend.app.MainActivity"
+            android:data="smartspend://add_expense" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="add_income"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:shortcutShortLabel="@string/shortcut_add_income"
+        android:shortcutLongLabel="@string/shortcut_add_income">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.smartspend.app"
+            android:targetClass="com.smartspend.app.MainActivity"
+            android:data="smartspend://income" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="view_ledger"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_recent_history"
+        android:shortcutShortLabel="@string/shortcut_ledger"
+        android:shortcutLongLabel="@string/shortcut_ledger">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.smartspend.app"
+            android:targetClass="com.smartspend.app.MainActivity"
+            android:data="smartspend://ledger" />
+    </shortcut>
+</shortcuts>
