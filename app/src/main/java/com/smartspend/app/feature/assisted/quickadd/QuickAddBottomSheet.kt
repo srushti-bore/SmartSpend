@@ -32,6 +32,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -44,12 +47,15 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,8 +72,10 @@ import com.smartspend.app.core.ui.theme.BrandPrimary
 import com.smartspend.app.core.ui.theme.StatusDanger
 import com.smartspend.app.domain.assisted.ParsedExpenseDraft
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -79,6 +87,11 @@ fun QuickAddBottomSheet(
     val uiState by viewModel.uiState.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val focusRequester = remember { FocusRequester() }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val initialDate = uiState.parsedDraft?.date ?: System.currentTimeMillis()
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialDate
+    )
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
@@ -88,6 +101,41 @@ fun QuickAddBottomSheet(
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+    }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDatePicker = false
+                        val selectedUtcMillis = datePickerState.selectedDateMillis
+                        if (selectedUtcMillis != null) {
+                            val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                                timeInMillis = selectedUtcMillis
+                            }
+                            val localCal = Calendar.getInstance().apply {
+                                timeInMillis = uiState.parsedDraft?.date ?: System.currentTimeMillis()
+                                set(Calendar.YEAR, utcCal.get(Calendar.YEAR))
+                                set(Calendar.MONTH, utcCal.get(Calendar.MONTH))
+                                set(Calendar.DAY_OF_MONTH, utcCal.get(Calendar.DAY_OF_MONTH))
+                            }
+                            viewModel.onDateChanged(localCal.timeInMillis)
+                        }
+                    }
+                ) {
+                    Text("Confirm", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 
     ModalBottomSheet(
@@ -259,6 +307,7 @@ fun QuickAddBottomSheet(
                             // Date Chip
                             val sdf = SimpleDateFormat("dd MMM", Locale.getDefault())
                             Surface(
+                                modifier = Modifier.clickable { showDatePicker = true },
                                 shape = RoundedCornerShape(8.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant
                             ) {

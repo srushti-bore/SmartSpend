@@ -2,7 +2,7 @@
 
 **Document Version:** 1.1
 **Status:** Draft
-**Based on:** PARADOX_MASTER_PRD.md (v2.0)
+**Based on:** SmartSpend_MASTER_PRD.md (v2.0)
 **Platform:** Native Android
 **Document Type:** Software Requirements Specification
 

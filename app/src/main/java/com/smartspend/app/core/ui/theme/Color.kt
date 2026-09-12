@@ -4,27 +4,34 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 
-// Light Palette Tokens
+// ==========================================
+// 1. CLASSIC PASTEL TOKENS (LIGHT & DARK)
+// ==========================================
+
+// Light Classic Pastel Tokens
 val LightAtelierCanvas = Color(0xFFFBFBF9)
-val LightAtelierSurfaceChalk = Color(0xFFF4F3EF)
-val LightAtelierSurfaceChalkHigh = Color(0xFFE8E8E6)
+val LightAtelierSurfaceChalk = Color(0xFFF3F3EF)
+val LightAtelierSurfaceChalkHigh = Color(0xFFE8E8E3)
 val LightAtelierHairline = Color(0xFFE2E0D8)
-val LightAtelierHairlineDark = Color(0xFFC5C6CB)
+val LightAtelierHairlineDark = Color(0xFFC8C7C0)
 val LightAtelierPrimaryInk = Color(0xFF1E232A)
-val LightAtelierInkMuted = Color(0xFF686E78)
-val LightAtelierInkSubtle = Color(0xFF9E9E98)
+val LightAtelierInkMuted = Color(0xFF6C727D)
+val LightAtelierInkSubtle = Color(0xFF9CA1AB)
 
-// Dark Palette Tokens
-val DarkAtelierCanvas = Color(0xFF14171B)
-val DarkAtelierSurfaceChalk = Color(0xFF1E2228)
-val DarkAtelierSurfaceChalkHigh = Color(0xFF282D36)
-val DarkAtelierHairline = Color(0xFF2E343E)
-val DarkAtelierHairlineDark = Color(0xFF454E5C)
-val DarkAtelierPrimaryInk = Color(0xFFF0F1F3)
-val DarkAtelierInkMuted = Color(0xFFA0A6B2)
-val DarkAtelierInkSubtle = Color(0xFF757C8A)
+// Dark Obsidian Pastel Tokens
+val DarkAtelierCanvas = Color(0xFF121519)
+val DarkAtelierSurfaceChalk = Color(0xFF1A1E24)
+val DarkAtelierSurfaceChalkHigh = Color(0xFF242A33)
+val DarkAtelierHairline = Color(0xFF2B323D)
+val DarkAtelierHairlineDark = Color(0xFF404A59)
+val DarkAtelierPrimaryInk = Color(0xFFF0F2F5)
+val DarkAtelierInkMuted = Color(0xFF9FA6B2)
+val DarkAtelierInkSubtle = Color(0xFF727A87)
 
-// Dynamic Atelier Ledger Foundation Tokens (Reactive to Dark/Light Theme)
+// ==========================================
+// 2. DYNAMIC THEME COMPOSITION ACCESSORS
+// ==========================================
+
 val AtelierCanvas: Color
     @Composable
     @ReadOnlyComposable
@@ -65,7 +72,7 @@ val AtelierInkSubtle: Color
     @ReadOnlyComposable
     get() = LocalAtelierColors.current.inkSubtle
 
-// Semantic Accents (Pastel annotations)
+// Semantic Pastel Accents (Derived sRGB Harmonics)
 val AtelierAmber: Color
     @Composable
     @ReadOnlyComposable
@@ -106,7 +113,17 @@ val AtelierSageSubtle: Color
     @ReadOnlyComposable
     get() = LocalAtelierColors.current.sageSubtle
 
-// Compatibility mappings for existing codebase references
+val AtelierLavender: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.lavender
+
+val AtelierLavenderSubtle: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAtelierColors.current.lavenderSubtle
+
+// Compatibility mappings
 val BrandPrimary: Color @Composable @ReadOnlyComposable get() = AtelierPrimaryInk
 val BrandSecondary: Color @Composable @ReadOnlyComposable get() = AtelierPeriwinkle
 val BrandAccent: Color @Composable @ReadOnlyComposable get() = AtelierAmber
@@ -127,6 +144,7 @@ val PastelPink: Color @Composable @ReadOnlyComposable get() = AtelierCoralSubtle
 val PastelBlue: Color @Composable @ReadOnlyComposable get() = AtelierPeriwinkleSubtle
 val PastelGreen: Color @Composable @ReadOnlyComposable get() = AtelierSageSubtle
 val PastelYellow: Color @Composable @ReadOnlyComposable get() = AtelierAmberSubtle
-val PastelPurple = Color(0xFFEADDF2)
+val PastelPurple: Color @Composable @ReadOnlyComposable get() = AtelierLavenderSubtle
 val PastelOrange: Color @Composable @ReadOnlyComposable get() = AtelierAmberSubtle
 val PastelTeal: Color @Composable @ReadOnlyComposable get() = AtelierSageSubtle
+

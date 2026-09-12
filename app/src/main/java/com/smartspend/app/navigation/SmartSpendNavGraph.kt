@@ -31,6 +31,7 @@ import com.smartspend.app.feature.profile.LockScreen
 import com.smartspend.app.feature.recurring.RecurringExpenseScreen
 import com.smartspend.app.feature.report.ReportsScreen
 import com.smartspend.app.feature.savingsgoal.SavingsGoalScreen
+import com.smartspend.app.feature.settings.SettingsScreen
 import com.smartspend.app.feature.split.SplitExpenseScreen
 
 @Composable
@@ -46,6 +47,7 @@ fun SmartSpendNavGraph(
         Screen.Dashboard.route,
         Screen.Budgets.route,
         Screen.ReceiptScanner.route,
+        Screen.Settings.route,
         Screen.Ledger.route
     )
 
@@ -58,6 +60,7 @@ fun SmartSpendNavGraph(
                         Screen.Dashboard.route -> "dashboard"
                         Screen.Budgets.route -> "budgets"
                         Screen.ReceiptScanner.route -> "receipt_scan"
+                        Screen.Settings.route -> "settings"
                         Screen.Ledger.route -> "ledger"
                         else -> "dashboard"
                     },
@@ -72,6 +75,10 @@ fun SmartSpendNavGraph(
                                 launchSingleTop = true
                             }
                             "receipt_scan" -> navController.navigate(Screen.ReceiptScanner.route) {
+                                popUpTo(Screen.Dashboard.route)
+                                launchSingleTop = true
+                            }
+                            "settings" -> navController.navigate(Screen.Settings.route) {
                                 popUpTo(Screen.Dashboard.route)
                                 launchSingleTop = true
                             }
@@ -330,6 +337,22 @@ fun SmartSpendNavGraph(
             composable(Screen.SplitExpense.route) {
                 SplitExpenseScreen(
                     onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.Settings.route) {
+                SettingsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onLogout = {
+                        navController.navigate(Screen.Lock.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onAccountReset = {
+                        navController.navigate(Screen.Onboarding.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
                 )
             }
         }

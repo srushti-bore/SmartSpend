@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +34,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -90,13 +94,14 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BudgetScreen(
     onNavigateBack: () -> Unit,
     viewModel: BudgetViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    var selectedMonthIndex by remember { mutableStateOf(0) }
+    var categoryDropdownExpanded by remember { mutableStateOf(false) }
     val currentMonthStr = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date())
 
     if (state.isAddDialogOpen) {
@@ -115,11 +120,18 @@ fun BudgetScreen(
                 Column {
                     SectionLabel(text = "Allocation Frequency")
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        listOf(BudgetType.DAILY, BudgetType.WEEKLY, BudgetType.MONTHLY, BudgetType.YEARLY).forEach { type ->
+                        listOf(
+                            BudgetType.DAILY,
+                            BudgetType.WEEKLY,
+                            BudgetType.MONTHLY,
+                            BudgetType.CATEGORY,
+                            BudgetType.YEARLY
+                        ).forEach { type ->
                             val isSelected = state.newBudgetType == type
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
@@ -129,21 +141,76 @@ fun BudgetScreen(
                                     .clickable { viewModel.onTypeSelect(type) }
                             ) {
                                 Text(
-                                    text = type.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    text = when (type) {
+                                        BudgetType.DAILY -> "Daily"
+                                        BudgetType.WEEKLY -> "Weekly"
+                                        BudgetType.MONTHLY -> "Monthly"
+                                        BudgetType.CATEGORY -> "Category"
+                                        BudgetType.YEARLY -> "Yearly"
+                                    },
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontSize = 11.sp,
                                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                                     ),
                                     color = if (isSelected) AtelierCanvas else AtelierPrimaryInk,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                 )
+                            }
+                        }
+                    }
+
+                    if (state.newBudgetType == BudgetType.CATEGORY) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        SectionLabel(text = "Select Category")
+                        Spacer(modifier = Modifier.height(6.dp))
+                        val selectedCategory = state.categories.find { it.id == state.selectedCategoryId }
+                        Box {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.dp, AtelierHairline, RoundedCornerShape(4.dp))
+                                    .clickable { categoryDropdownExpanded = true },
+                                shape = RoundedCornerShape(4.dp),
+                                color = AtelierSurfaceChalk
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = selectedCategory?.name ?: "Choose Category",
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                                        color = AtelierPrimaryInk
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.FilterList,
+                                        contentDescription = null,
+                                        tint = AtelierInkMuted,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                            DropdownMenu(
+                                expanded = categoryDropdownExpanded,
+                                onDismissRequest = { categoryDropdownExpanded = false }
+                            ) {
+                                state.categories.forEach { category ->
+                                    DropdownMenuItem(
+                                        text = { Text(category.name) },
+                                        onClick = {
+                                            viewModel.onCategorySelect(category.id)
+                                            categoryDropdownExpanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    SectionLabel(text = "Fiscal Cap Amount")
+                    SectionLabel(text = "Fiscal Cap Amount (${state.preferredCurrency})")
                     Spacer(modifier = Modifier.height(6.dp))
                     OutlinedTextField(
                         value = state.newBudgetAmountInput,
@@ -202,8 +269,14 @@ fun BudgetScreen(
         if (state.isLoading) {
             LoadingState(message = "Reading Budget Allocations...")
         } else {
-            val totalSpent = state.budgetProgressList.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.spentAmount) }
-            val totalLimit = state.budgetProgressList.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.budget.amount) }
+            val filteredBudgets = if (state.selectedFilterType != null) {
+                state.budgetProgressList.filter { it.budget.type == state.selectedFilterType }
+            } else {
+                state.budgetProgressList
+            }
+
+            val totalSpent = filteredBudgets.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.spentAmount) }
+            val totalLimit = filteredBudgets.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.budget.amount) }
             val totalPercentage = if (totalLimit > BigDecimal.ZERO) {
                 totalSpent.multiply(BigDecimal(100)).divide(totalLimit, 0, java.math.RoundingMode.HALF_EVEN).toInt()
             } else 0
@@ -293,6 +366,15 @@ fun BudgetScreen(
 
                 // 3. MASTER BUDGET SUMMARY SHELF
                 item {
+                    val periodLabel = when (state.selectedFilterType) {
+                        BudgetType.DAILY -> "Daily Expenditure Limit"
+                        BudgetType.WEEKLY -> "Weekly Expenditure Limit"
+                        BudgetType.MONTHLY -> "Monthly Expenditure Limit"
+                        BudgetType.CATEGORY -> "Category Expenditure Limit"
+                        BudgetType.YEARLY -> "Yearly Expenditure Limit"
+                        null -> "Total Expenditure Limit"
+                    }
+
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -306,9 +388,9 @@ fun BudgetScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                SectionLabel(text = "Total Monthly Expenditure")
+                                SectionLabel(text = periodLabel)
                                 AtelierPillBadge(
-                                    text = "${MoneyUtils.format(unallocated)} Unallocated",
+                                    text = "${MoneyUtils.format(unallocated, state.preferredCurrency)} Remaining",
                                     backgroundColor = AtelierSageSubtle,
                                     contentColor = AtelierSage
                                 )
@@ -318,7 +400,7 @@ fun BudgetScreen(
 
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Text(
-                                    text = MoneyUtils.format(totalSpent),
+                                    text = MoneyUtils.format(totalSpent, state.preferredCurrency),
                                     fontFamily = NewsreaderFontFamily,
                                     fontSize = 28.sp,
                                     fontWeight = FontWeight.Medium,
@@ -326,7 +408,7 @@ fun BudgetScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "of ${MoneyUtils.format(totalLimit)} spent",
+                                    text = "of ${MoneyUtils.format(totalLimit, state.preferredCurrency)} limit",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = AtelierInkMuted
                                 )
@@ -368,12 +450,52 @@ fun BudgetScreen(
                     }
                 }
 
-                // 4. DOUBLE HAIRLINE SEPARATOR
+                // 4. PERIOD FILTER CHIPS
                 item {
-                    DoubleHairlineRule(modifier = Modifier.padding(vertical = 18.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val filterOptions = listOf(
+                            "All" to null,
+                            "Daily" to BudgetType.DAILY,
+                            "Weekly" to BudgetType.WEEKLY,
+                            "Monthly" to BudgetType.MONTHLY,
+                            "Category" to BudgetType.CATEGORY
+                        )
+
+                        filterOptions.forEach { (label, type) ->
+                            val isSelected = state.selectedFilterType == type
+                            Surface(
+                                shape = RoundedCornerShape(9999.dp),
+                                color = if (isSelected) AtelierPrimaryInk else AtelierSurfaceChalk,
+                                modifier = Modifier
+                                    .border(
+                                        1.dp,
+                                        if (isSelected) AtelierPrimaryInk else AtelierHairline,
+                                        RoundedCornerShape(9999.dp)
+                                    )
+                                    .clickable { viewModel.onFilterSelect(type) }
+                            ) {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                    ),
+                                    color = if (isSelected) AtelierCanvas else AtelierPrimaryInk,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                                )
+                            }
+                        }
+                    }
+                    DoubleHairlineRule(modifier = Modifier.padding(bottom = 14.dp))
                 }
 
-                // 5. CATEGORY LEDGER ACCOUNTS SECTION
+                // 5. BUDGET ALLOCATIONS LIST
                 item {
                     Row(
                         modifier = Modifier
@@ -382,47 +504,46 @@ fun BudgetScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SectionLabel(text = "Category Ledger Accounts (${state.budgetProgressList.size})")
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FilterList,
-                                contentDescription = "Filter",
-                                tint = AtelierInkMuted,
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Filter",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = AtelierInkMuted
-                            )
+                        val headerTitle = when (state.selectedFilterType) {
+                            BudgetType.DAILY -> "Daily Spending Ceilings"
+                            BudgetType.WEEKLY -> "Weekly Spending Ceilings"
+                            BudgetType.MONTHLY -> "Monthly Spending Ceilings"
+                            BudgetType.CATEGORY -> "Category Spending Ceilings"
+                            BudgetType.YEARLY -> "Yearly Spending Ceilings"
+                            null -> "Active Allocations"
                         }
+                        SectionLabel(text = "$headerTitle (${filteredBudgets.size})")
                     }
                 }
 
                 // Empty State or List
-                if (state.budgetProgressList.isEmpty()) {
+                if (filteredBudgets.isEmpty()) {
                     item {
                         EmptyState(
-                            title = "No Ledger Allocations",
-                            description = "Define spending ceilings for categories or periodic periods.",
+                            title = "No Budget Allocations",
+                            description = "Define spending ceilings for daily, weekly, monthly, or category expenses.",
                             actionButtonText = "Establish Budget Limit",
                             onActionClick = viewModel::openAddDialog
                         )
                     }
                 } else {
-                    itemsIndexed(state.budgetProgressList) { index, progress ->
+                    itemsIndexed(filteredBudgets) { index, progress ->
                         val category = state.categories.find { it.id == progress.budget.categoryId }
-                        val categoryName = category?.name ?: "${progress.budget.type.name.lowercase().replaceFirstChar { it.uppercase() }} Allocation"
+                        val categoryName = category?.name
+                            ?: when (progress.budget.type) {
+                                BudgetType.DAILY -> "Daily Limit"
+                                BudgetType.WEEKLY -> "Weekly Limit"
+                                BudgetType.MONTHLY -> "Monthly Limit"
+                                BudgetType.CATEGORY -> "Category Limit"
+                                BudgetType.YEARLY -> "Yearly Limit"
+                            }
                         val folioNumber = "FOLIO DIV-${String.format("%02d", index + 1)}"
 
                         BudgetItemRow(
                             progress = progress,
                             categoryName = categoryName,
                             folioNumber = folioNumber,
+                            preferredCurrency = state.preferredCurrency,
                             onDelete = { viewModel.deleteBudget(progress.budget.id) }
                         )
                         Spacer(modifier = Modifier.height(10.dp))
@@ -439,7 +560,7 @@ fun BudgetScreen(
                     ) {
                         TextButton(onClick = viewModel::openAddDialog) {
                             Text(
-                                text = "+ Create New Budget Ledger",
+                                text = "+ Create New Budget Allocation",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
@@ -461,6 +582,7 @@ private fun BudgetItemRow(
     progress: BudgetProgress,
     categoryName: String,
     folioNumber: String,
+    preferredCurrency: String,
     onDelete: () -> Unit
 ) {
     val statusColor = when (progress.status) {
@@ -479,6 +601,14 @@ private fun BudgetItemRow(
         BudgetStatus.ON_TRACK -> "On track"
         BudgetStatus.NEAR_LIMIT -> "Near limit"
         BudgetStatus.OVER_BUDGET -> "Over limit"
+    }
+
+    val typeBadgeText = when (progress.budget.type) {
+        BudgetType.DAILY -> "DAILY"
+        BudgetType.WEEKLY -> "WEEKLY"
+        BudgetType.MONTHLY -> "MONTHLY"
+        BudgetType.CATEGORY -> "CATEGORY"
+        BudgetType.YEARLY -> "YEARLY"
     }
 
     Surface(
@@ -516,33 +646,47 @@ private fun BudgetItemRow(
 
             // Details
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = categoryName,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = AtelierPrimaryInk,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = categoryName,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = AtelierPrimaryInk,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(2.dp),
+                        color = AtelierSurfaceChalk
+                    ) {
+                        Text(
+                            text = typeBadgeText,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                            color = AtelierInkMuted,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "$folioNumber • Registered Ledger",
+                    text = "$folioNumber • Registered Ceiling",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                     color = AtelierInkMuted
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text = MoneyUtils.format(progress.spentAmount),
+                        text = MoneyUtils.format(progress.spentAmount, preferredCurrency),
                         fontFamily = NewsreaderFontFamily,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
                         color = AtelierPrimaryInk
                     )
                     Text(
-                        text = " of ${MoneyUtils.format(progress.budget.amount)} Limit",
+                        text = " of ${MoneyUtils.format(progress.budget.amount, preferredCurrency)} Limit",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                         color = AtelierInkMuted
                     )

@@ -29,10 +29,13 @@ import javax.inject.Inject
 data class BudgetUiState(
     val budgetProgressList: List<BudgetProgress> = emptyList(),
     val categories: List<Category> = emptyList(),
+    val selectedFilterType: BudgetType? = null,
     val isAddDialogOpen: Boolean = false,
     val newBudgetAmountInput: String = "",
     val newBudgetType: BudgetType = BudgetType.MONTHLY,
+    val selectedCategoryId: String? = null,
     val newBudgetThresholdPct: Int = 80,
+    val preferredCurrency: String = "INR",
     val isLoading: Boolean = true,
     val errorMessage: String? = null
 )
@@ -59,6 +62,12 @@ class BudgetViewModel @Inject constructor(
 
     private fun observeBudgets() {
         viewModelScope.launch {
+            preferencesManager.preferredCurrencyFlow.collect { currency ->
+                _uiState.value = _uiState.value.copy(preferredCurrency = currency)
+            }
+        }
+
+        viewModelScope.launch {
             preferencesManager.activeProfileIdFlow.collect { profileId ->
                 activeProfileId = profileId
             }
@@ -72,7 +81,10 @@ class BudgetViewModel @Inject constructor(
                     flowOf(emptyList())
                 }
             }.collect { categories ->
-                _uiState.value = _uiState.value.copy(categories = categories)
+                _uiState.value = _uiState.value.copy(
+                    categories = categories,
+                    selectedCategoryId = _uiState.value.selectedCategoryId ?: categories.firstOrNull()?.id
+                )
             }
         }
 
@@ -99,8 +111,18 @@ class BudgetViewModel @Inject constructor(
         }
     }
 
+    fun onFilterSelect(type: BudgetType?) {
+        _uiState.value = _uiState.value.copy(selectedFilterType = type)
+    }
+
     fun openAddDialog() {
-        _uiState.value = _uiState.value.copy(isAddDialogOpen = true, newBudgetAmountInput = "", errorMessage = null)
+        _uiState.value = _uiState.value.copy(
+            isAddDialogOpen = true,
+            newBudgetAmountInput = "",
+            newBudgetType = BudgetType.MONTHLY,
+            selectedCategoryId = _uiState.value.categories.firstOrNull()?.id,
+            errorMessage = null
+        )
     }
 
     fun closeAddDialog() {
@@ -115,6 +137,10 @@ class BudgetViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(newBudgetType = type)
     }
 
+    fun onCategorySelect(categoryId: String?) {
+        _uiState.value = _uiState.value.copy(selectedCategoryId = categoryId)
+    }
+
     fun saveBudget() {
         val state = _uiState.value
         val profileId = activeProfileId ?: return
@@ -125,11 +151,16 @@ class BudgetViewModel @Inject constructor(
             return
         }
 
+        val categoryIdToSave = if (state.newBudgetType == BudgetType.CATEGORY) {
+            state.selectedCategoryId ?: state.categories.firstOrNull()?.id
+        } else null
+
         viewModelScope.launch {
             val result = upsertBudgetUseCase(
                 profileId = profileId,
                 type = state.newBudgetType,
                 amount = parsedAmount,
+                categoryId = categoryIdToSave,
                 thresholdPct = state.newBudgetThresholdPct
             )
 

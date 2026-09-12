@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -372,12 +373,12 @@ fun AtelierBottomNavBar(
                     onClick = { onNavigateToRoute("receipt_scan") }
                 )
 
-                // Tab 4: History
+                // Tab 4: Settings
                 BottomNavItem(
-                    label = "History",
-                    icon = Icons.Default.History,
-                    isSelected = selectedRoute == "ledger",
-                    onClick = { onNavigateToRoute("ledger") }
+                    label = "Settings",
+                    icon = Icons.Default.Settings,
+                    isSelected = selectedRoute == "settings",
+                    onClick = { onNavigateToRoute("settings") }
                 )
             }
         }

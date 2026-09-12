@@ -36,4 +36,5 @@ sealed class Screen(val route: String) {
     object Reports : Screen("reports")
     object BackupRestore : Screen("backup_restore")
     object SplitExpense : Screen("split_expense")
+    object Settings : Screen("settings")
 }

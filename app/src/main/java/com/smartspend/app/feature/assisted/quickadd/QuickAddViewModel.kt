@@ -116,6 +116,13 @@ class QuickAddViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(selectedPaymentMethod = paymentMethod)
     }
 
+    fun onDateChanged(newDate: Long) {
+        val currentDraft = _uiState.value.parsedDraft ?: return
+        val updatedDraft = currentDraft.copy(date = newDate)
+        _uiState.value = _uiState.value.copy(parsedDraft = updatedDraft)
+        checkDuplicates(updatedDraft.title, updatedDraft.amount, updatedDraft.date)
+    }
+
     private fun checkDuplicates(title: String, amount: BigDecimal?, date: Long) {
         val profileId = activeProfileId ?: return
         if (amount == null || title.isBlank()) {

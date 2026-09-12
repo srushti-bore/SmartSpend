@@ -32,6 +32,11 @@ import javax.inject.Inject
 data class DashboardUiState(
     val activeProfileId: String = "",
     val profileName: String = "",
+    val preferredCurrency: String = "INR",
+    val todayDebits: BigDecimal = BigDecimal.ZERO,
+    val carryoverSurplus: BigDecimal = BigDecimal.ZERO,
+    val sevenDayAvgDebit: BigDecimal = BigDecimal.ZERO,
+    val sevenDayRhythm: List<Pair<String, BigDecimal>> = emptyList(),
     val summary: DashboardSummary? = null,
     val cashFlow: CashFlowSummary? = null,
     val recurringCommitment: BigDecimal = BigDecimal.ZERO,
@@ -104,6 +109,12 @@ class DashboardViewModel @Inject constructor(
         val endOfMonth = now.plusMonths(1).withDayOfMonth(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
 
         viewModelScope.launch {
+            preferencesManager.preferredCurrencyFlow.collect { curr ->
+                _uiState.update { it.copy(preferredCurrency = curr) }
+            }
+        }
+
+        viewModelScope.launch {
             preferencesManager.activeProfileIdFlow.collect { profileId ->
                 if (profileId != null) {
                     val profile = profileRepository.getProfileById(profileId)
@@ -173,7 +184,40 @@ class DashboardViewModel @Inject constructor(
                 }
             }.collect { expenses ->
                 val streak = streakManager.calculateStreak(expenses)
-                _uiState.update { it.copy(streakStatus = streak) }
+
+                // Calculate today's debits
+                val todayStart = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                val todayEnd = todayStart + (24 * 60 * 60 * 1000) - 1
+                val todaySum = expenses
+                    .filter { it.date in todayStart..todayEnd }
+                    .fold(BigDecimal.ZERO) { acc, exp -> acc.add(exp.amount) }
+
+                // Calculate 7-day rhythm and daily average
+                val sevenDaysAgo = LocalDate.now().minusDays(6).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                val last7DaysExpenses = expenses.filter { it.date >= sevenDaysAgo }
+                val last7DaysSum = last7DaysExpenses.fold(BigDecimal.ZERO) { acc, exp -> acc.add(exp.amount) }
+                val sevenDayAvg = if (last7DaysExpenses.isNotEmpty()) {
+                    last7DaysSum.divide(BigDecimal("7"), 2, java.math.RoundingMode.HALF_EVEN)
+                } else BigDecimal.ZERO
+
+                val rhythm = (6 downTo 0).map { daysBack ->
+                    val day = LocalDate.now().minusDays(daysBack.toLong())
+                    val dStart = day.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    val dEnd = dStart + (24 * 60 * 60 * 1000) - 1
+                    val dayTotal = expenses.filter { it.date in dStart..dEnd }
+                        .fold(BigDecimal.ZERO) { acc, exp -> acc.add(exp.amount) }
+                    val label = "${day.dayOfMonth} ${day.dayOfWeek.name.take(1)}"
+                    label to dayTotal
+                }
+
+                _uiState.update {
+                    it.copy(
+                        streakStatus = streak,
+                        todayDebits = todaySum,
+                        sevenDayAvgDebit = sevenDayAvg,
+                        sevenDayRhythm = rhythm
+                    )
+                }
             }
         }
     }

@@ -33,8 +33,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +48,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -82,10 +87,12 @@ import com.smartspend.app.core.ui.theme.AtelierSageSubtle
 import com.smartspend.app.core.ui.theme.AtelierSurfaceChalk
 import com.smartspend.app.core.ui.theme.NewsreaderFontFamily
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddEditExpenseScreen(
     onNavigateBack: () -> Unit,
@@ -94,6 +101,10 @@ fun AddEditExpenseScreen(
     val state by viewModel.uiState.collectAsState()
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var showAccountMenu by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = state.date
+    )
 
     LaunchedEffect(state.isSaved, state.isDeleted) {
         if (state.isSaved || state.isDeleted) {
@@ -137,6 +148,45 @@ fun AddEditExpenseScreen(
                 }
             }
         )
+    }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDatePicker = false
+                        val selectedUtcMillis = datePickerState.selectedDateMillis
+                        if (selectedUtcMillis != null) {
+                            val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                                timeInMillis = selectedUtcMillis
+                            }
+                            val localCal = Calendar.getInstance().apply {
+                                timeInMillis = state.date
+                                set(Calendar.YEAR, utcCal.get(Calendar.YEAR))
+                                set(Calendar.MONTH, utcCal.get(Calendar.MONTH))
+                                set(Calendar.DAY_OF_MONTH, utcCal.get(Calendar.DAY_OF_MONTH))
+                            }
+                            viewModel.onDateChange(localCal.timeInMillis)
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = AtelierAmber)
+                ) {
+                    Text("Confirm", fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDatePicker = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = AtelierInkMuted)
+                ) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 
     Scaffold(
@@ -363,7 +413,8 @@ fun AddEditExpenseScreen(
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .border(1.dp, AtelierHairline, RoundedCornerShape(4.dp)),
+                                .border(1.dp, AtelierHairline, RoundedCornerShape(4.dp))
+                                .clickable { showDatePicker = true },
                             shape = RoundedCornerShape(4.dp),
                             color = AtelierSurfaceChalk
                         ) {

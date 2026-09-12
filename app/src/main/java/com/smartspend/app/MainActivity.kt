@@ -63,13 +63,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val themeMode by preferencesManager.themeModeFlow.collectAsState(initial = "SYSTEM")
-            val isDark = when (themeMode) {
-                "DARK" -> true
-                "LIGHT" -> false
-                else -> androidx.compose.foundation.isSystemInDarkTheme()
-            }
 
-            SmartSpendTheme(darkTheme = isDark) {
+            SmartSpendTheme(themeMode = themeMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

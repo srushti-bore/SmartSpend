@@ -18,6 +18,7 @@ import javax.inject.Inject
 data class DashboardSummary(
     val totalSpentCurrentMonth: BigDecimal,
     val overallBudgetProgress: BudgetProgress?,
+    val dailyBudgetProgress: BudgetProgress? = null,
     val categoryBreakdown: List<CategorySpendAggregate>,
     val recentExpenses: List<Expense>
 )
@@ -28,7 +29,6 @@ class GetDashboardSummaryUseCase @Inject constructor(
 ) {
     operator fun invoke(profileId: String): Flow<DashboardSummary> {
         val calendar = Calendar.getInstance()
-        val currentMonthEnd = calendar.timeInMillis
         calendar.set(Calendar.DAY_OF_MONTH, 1)
         calendar.set(Calendar.HOUR_OF_DAY, 0)
         calendar.set(Calendar.MINUTE, 0)
@@ -36,20 +36,36 @@ class GetDashboardSummaryUseCase @Inject constructor(
         calendar.set(Calendar.MILLISECOND, 0)
         val currentMonthStart = calendar.timeInMillis
 
+        calendar.add(Calendar.MONTH, 1)
+        val currentMonthEnd = calendar.timeInMillis - 1
+
+        val todayCal = Calendar.getInstance()
+        todayCal.set(Calendar.HOUR_OF_DAY, 0)
+        todayCal.set(Calendar.MINUTE, 0)
+        todayCal.set(Calendar.SECOND, 0)
+        todayCal.set(Calendar.MILLISECOND, 0)
+        val todayStart = todayCal.timeInMillis
+        val todayEnd = todayStart + (24 * 60 * 60 * 1000) - 1
+
         val totalSpentFlow = expenseRepository.getTotalSpending(profileId, currentMonthStart, currentMonthEnd)
+        val todaySpentFlow = expenseRepository.getTotalSpending(profileId, todayStart, todayEnd)
         val recentExpensesFlow = expenseRepository.getRecentExpenses(profileId, limit = 5)
         val categoryBreakdownFlow = expenseRepository.getCategorySpending(profileId, currentMonthStart, currentMonthEnd)
         val monthlyBudgetFlow = budgetRepository.getOverallBudgetFlow(profileId, BudgetType.MONTHLY)
+        val dailyBudgetFlow = budgetRepository.getOverallBudgetFlow(profileId, BudgetType.DAILY)
 
         return combine(
-            totalSpentFlow,
-            monthlyBudgetFlow,
+            combine(totalSpentFlow, todaySpentFlow, monthlyBudgetFlow) { tSpent, tdSpent, mBudget ->
+                Triple(tSpent, tdSpent, mBudget)
+            },
+            dailyBudgetFlow,
             categoryBreakdownFlow,
             recentExpensesFlow
-        ) { totalSpent, budget, categories, recent ->
+        ) { (totalSpent, todaySpent, monthlyBudget), dailyBudget, categories, recent ->
             val spent = totalSpent ?: BigDecimal.ZERO
+            val spentToday = todaySpent ?: BigDecimal.ZERO
 
-            val budgetProgress = budget?.let { b ->
+            val budgetProgress = monthlyBudget?.let { b ->
                 val remaining = b.amount.subtract(spent)
                 val pct = MoneyUtils.calculatePercentage(spent, b.amount)
                 val status = when {
@@ -66,9 +82,27 @@ class GetDashboardSummaryUseCase @Inject constructor(
                 )
             }
 
+            val dailyProgress = dailyBudget?.let { b ->
+                val remaining = b.amount.subtract(spentToday)
+                val pct = MoneyUtils.calculatePercentage(spentToday, b.amount)
+                val status = when {
+                    spentToday.compareTo(b.amount) > 0 -> BudgetStatus.OVER_BUDGET
+                    pct >= b.thresholdPct -> BudgetStatus.NEAR_LIMIT
+                    else -> BudgetStatus.ON_TRACK
+                }
+                BudgetProgress(
+                    budget = b,
+                    spentAmount = spentToday,
+                    remainingAmount = remaining,
+                    percentageUsed = pct,
+                    status = status
+                )
+            }
+
             DashboardSummary(
                 totalSpentCurrentMonth = spent,
                 overallBudgetProgress = budgetProgress,
+                dailyBudgetProgress = dailyProgress,
                 categoryBreakdown = categories,
                 recentExpenses = recent
             )

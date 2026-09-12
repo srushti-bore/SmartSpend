@@ -135,7 +135,33 @@ fun DashboardScreen(
     val summary = state.summary
     val recentExpenses = summary?.recentExpenses?.take(5) ?: emptyList()
     val totalSpendMonth = summary?.totalSpentCurrentMonth ?: BigDecimal.ZERO
-    val remainingBudget = summary?.overallBudgetProgress?.remainingAmount ?: BigDecimal.ZERO
+    val overallBudgetProgress = summary?.overallBudgetProgress
+    val dailyBudgetProgress = summary?.dailyBudgetProgress
+
+    val todayCal = java.time.LocalDate.now()
+    val daysRemainingInMonth = (todayCal.lengthOfMonth() - todayCal.dayOfMonth + 1).coerceAtLeast(1)
+
+    val (safeDaily, remainingLimitText, progressFraction) = when {
+        dailyBudgetProgress != null -> {
+            val safe = dailyBudgetProgress.remainingAmount
+            val text = "Remaining of ${MoneyUtils.format(dailyBudgetProgress.budget.amount, state.preferredCurrency)} daily limit"
+            val fraction = (1f - (dailyBudgetProgress.percentageUsed / 100f)).coerceIn(0f, 1f)
+            Triple(safe, text, fraction)
+        }
+        overallBudgetProgress != null -> {
+            val safe = (overallBudgetProgress.remainingAmount.divide(BigDecimal(daysRemainingInMonth), 2, java.math.RoundingMode.HALF_EVEN)).max(BigDecimal.ZERO)
+            val text = "Pacing ($daysRemainingInMonth days left) of ${MoneyUtils.format(overallBudgetProgress.budget.amount, state.preferredCurrency)} limit"
+            val fraction = (1f - (overallBudgetProgress.percentageUsed / 100f)).coerceIn(0f, 1f)
+            Triple(safe, text, fraction)
+        }
+        else -> {
+            Triple(
+                BigDecimal.ZERO,
+                "No budget ceiling set • Tap Budgets to create",
+                1f
+            )
+        }
+    }
 
     // Today's Date Formatted for Editorial Ribbon
     val todayDateFormatted = SimpleDateFormat("EEEE, MMM d", Locale.getDefault()).format(Date())
@@ -271,14 +297,6 @@ fun DashboardScreen(
                         .padding(vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val safeDaily = if (remainingBudget > BigDecimal.ZERO) {
-                        remainingBudget.divide(BigDecimal("20"), 2, java.math.RoundingMode.HALF_EVEN)
-                    } else BigDecimal("42.50")
-
-                    val progressFraction = if (summary != null && summary.overallBudgetProgress != null) {
-                        1f - (summary.overallBudgetProgress.percentageUsed / 100f).coerceIn(0f, 1f)
-                    } else 0.65f
-
                     CircularGauge(
                         progress = progressFraction,
                         size = 230.dp,
@@ -293,7 +311,7 @@ fun DashboardScreen(
                             SectionLabel(text = "Daily Safe-to-Spend")
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = MoneyUtils.format(safeDaily),
+                                text = MoneyUtils.format(safeDaily, state.preferredCurrency),
                                 fontFamily = NewsreaderFontFamily,
                                 fontSize = 42.sp,
                                 fontWeight = FontWeight.Normal,
@@ -302,7 +320,7 @@ fun DashboardScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Remaining of ${MoneyUtils.format(remainingBudget)} limit",
+                                text = remainingLimitText,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = AtelierInkMuted
                             )
@@ -325,7 +343,7 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.height(2.dp))
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Text(
-                                    text = "$22.50",
+                                    text = MoneyUtils.format(state.todayDebits, state.preferredCurrency),
                                     fontFamily = NewsreaderFontFamily,
                                     fontSize = 22.sp,
                                     fontWeight = FontWeight.Normal,
@@ -352,7 +370,7 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.height(2.dp))
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Text(
-                                    text = "+$14.20",
+                                    text = "+${MoneyUtils.format(state.carryoverSurplus, state.preferredCurrency)}",
                                     fontFamily = NewsreaderFontFamily,
                                     fontSize = 22.sp,
                                     fontWeight = FontWeight.Normal,
@@ -393,7 +411,7 @@ fun DashboardScreen(
                             color = AtelierPeriwinkleSubtle
                         ) {
                             Text(
-                                text = "Avg. $38.40/day",
+                                text = "Avg. ${MoneyUtils.format(state.sevenDayAvgDebit, state.preferredCurrency)}/day",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.SemiBold,
                                     color = AtelierPeriwinkle
@@ -421,15 +439,24 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.Bottom
                         ) {
-                            val days = listOf(
-                                Triple("18 F", 0.60f, "$45"),
-                                Triple("19 S", 0.85f, "$62"),
-                                Triple("20 S", 0.38f, "$28"),
-                                Triple("21 M", 0.48f, "$35"),
-                                Triple("22 T", 0.72f, "$52"),
-                                Triple("23 W", 0.42f, "$31"),
-                                Triple("24 T", 0.34f, "$22") // Today in amber
-                            )
+                            val days = if (state.sevenDayRhythm.isNotEmpty()) {
+                                val maxAmt = state.sevenDayRhythm.maxOfOrNull { it.second } ?: BigDecimal.ONE
+                                val safeMax = if (maxAmt > BigDecimal.ZERO) maxAmt else BigDecimal.ONE
+                                state.sevenDayRhythm.map { (label, amt) ->
+                                    val frac = (amt.toFloat() / safeMax.toFloat()).coerceIn(0.08f, 1.0f)
+                                    Triple(label, frac, MoneyUtils.format(amt, state.preferredCurrency))
+                                }
+                            } else {
+                                listOf(
+                                    Triple("18 F", 0.60f, MoneyUtils.format(BigDecimal("45"), state.preferredCurrency)),
+                                    Triple("19 S", 0.85f, MoneyUtils.format(BigDecimal("62"), state.preferredCurrency)),
+                                    Triple("20 S", 0.38f, MoneyUtils.format(BigDecimal("28"), state.preferredCurrency)),
+                                    Triple("21 M", 0.48f, MoneyUtils.format(BigDecimal("35"), state.preferredCurrency)),
+                                    Triple("22 T", 0.72f, MoneyUtils.format(BigDecimal("52"), state.preferredCurrency)),
+                                    Triple("23 W", 0.42f, MoneyUtils.format(BigDecimal("31"), state.preferredCurrency)),
+                                    Triple("24 T", 0.34f, MoneyUtils.format(BigDecimal("22"), state.preferredCurrency))
+                                )
+                            }
 
                             days.forEachIndexed { index, (label, heightFraction, amt) ->
                                 val isToday = index == days.size - 1
@@ -538,7 +565,7 @@ fun DashboardScreen(
                         meta = "08:14 AM • Food & Provisions",
                         statusText = "On track",
                         statusColor = AtelierSage,
-                        amount = "↓ $4.75",
+                        amount = "↓ ${MoneyUtils.format(BigDecimal("4.75"), state.preferredCurrency)}",
                         onClick = onNavigateToLedger
                     )
                     VoucherRow(
@@ -546,7 +573,7 @@ fun DashboardScreen(
                         meta = "09:05 AM • Commute & Freight",
                         statusText = "On track",
                         statusColor = AtelierSage,
-                        amount = "↓ $2.75",
+                        amount = "↓ ${MoneyUtils.format(BigDecimal("2.75"), state.preferredCurrency)}",
                         onClick = onNavigateToLedger
                     )
                     VoucherRow(
@@ -554,7 +581,7 @@ fun DashboardScreen(
                         meta = "01:20 PM • Office Supplies",
                         statusText = "Near limit",
                         statusColor = AtelierAmber,
-                        amount = "↓ $15.00",
+                        amount = "↓ ${MoneyUtils.format(BigDecimal("15.00"), state.preferredCurrency)}",
                         onClick = onNavigateToLedger
                     )
                 }

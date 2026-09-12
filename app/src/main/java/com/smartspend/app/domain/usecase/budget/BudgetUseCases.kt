@@ -87,39 +87,55 @@ class CalculateBudgetProgressUseCase @Inject constructor(
     }
 
     private fun getPeriodDates(type: BudgetType): Pair<Long, Long> {
-        val calendar = Calendar.getInstance()
-        val end = calendar.timeInMillis
+        val startCal = Calendar.getInstance()
+        val endCal = Calendar.getInstance()
 
         when (type) {
             BudgetType.DAILY -> {
-                calendar.set(Calendar.HOUR_OF_DAY, 0)
-                calendar.set(Calendar.MINUTE, 0)
-                calendar.set(Calendar.SECOND, 0)
-                calendar.set(Calendar.MILLISECOND, 0)
+                startCal.set(Calendar.HOUR_OF_DAY, 0)
+                startCal.set(Calendar.MINUTE, 0)
+                startCal.set(Calendar.SECOND, 0)
+                startCal.set(Calendar.MILLISECOND, 0)
+
+                endCal.set(Calendar.HOUR_OF_DAY, 23)
+                endCal.set(Calendar.MINUTE, 59)
+                endCal.set(Calendar.SECOND, 59)
+                endCal.set(Calendar.MILLISECOND, 999)
             }
             BudgetType.WEEKLY -> {
-                calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
-                calendar.set(Calendar.HOUR_OF_DAY, 0)
-                calendar.set(Calendar.MINUTE, 0)
-                calendar.set(Calendar.SECOND, 0)
-                calendar.set(Calendar.MILLISECOND, 0)
+                startCal.set(Calendar.DAY_OF_WEEK, startCal.firstDayOfWeek)
+                startCal.set(Calendar.HOUR_OF_DAY, 0)
+                startCal.set(Calendar.MINUTE, 0)
+                startCal.set(Calendar.SECOND, 0)
+                startCal.set(Calendar.MILLISECOND, 0)
+
+                endCal.timeInMillis = startCal.timeInMillis
+                endCal.add(Calendar.DAY_OF_WEEK, 7)
+                endCal.add(Calendar.MILLISECOND, -1)
             }
             BudgetType.MONTHLY, BudgetType.CATEGORY -> {
-                calendar.set(Calendar.DAY_OF_MONTH, 1)
-                calendar.set(Calendar.HOUR_OF_DAY, 0)
-                calendar.set(Calendar.MINUTE, 0)
-                calendar.set(Calendar.SECOND, 0)
-                calendar.set(Calendar.MILLISECOND, 0)
+                startCal.set(Calendar.DAY_OF_MONTH, 1)
+                startCal.set(Calendar.HOUR_OF_DAY, 0)
+                startCal.set(Calendar.MINUTE, 0)
+                startCal.set(Calendar.SECOND, 0)
+                startCal.set(Calendar.MILLISECOND, 0)
+
+                endCal.timeInMillis = startCal.timeInMillis
+                endCal.add(Calendar.MONTH, 1)
+                endCal.add(Calendar.MILLISECOND, -1)
             }
             BudgetType.YEARLY -> {
-                calendar.set(Calendar.DAY_OF_YEAR, 1)
-                calendar.set(Calendar.HOUR_OF_DAY, 0)
-                calendar.set(Calendar.MINUTE, 0)
-                calendar.set(Calendar.SECOND, 0)
-                calendar.set(Calendar.MILLISECOND, 0)
+                startCal.set(Calendar.DAY_OF_YEAR, 1)
+                startCal.set(Calendar.HOUR_OF_DAY, 0)
+                startCal.set(Calendar.MINUTE, 0)
+                startCal.set(Calendar.SECOND, 0)
+                startCal.set(Calendar.MILLISECOND, 0)
+
+                endCal.timeInMillis = startCal.timeInMillis
+                endCal.add(Calendar.YEAR, 1)
+                endCal.add(Calendar.MILLISECOND, -1)
             }
         }
-        val start = calendar.timeInMillis
-        return Pair(start, end)
+        return Pair(startCal.timeInMillis, endCal.timeInMillis)
     }
 }
