@@ -124,10 +124,28 @@
   - `SeedDemoDataUseCase` populating 4 accounts, 3 income sources (+₹95,900), 6 budgets, 18 realistic expense transactions, 5 subscriptions, and 3 savings goals with contribution records.
   - 1-Tap UI button on Dashboard empty state & quick actions horizontal bar, and intent broadcast handling in `MainActivity`.
 
+#### Phase 8: Settings Architecture, Pastel Themes, Precision Budget Limits & Expense DatePicker
+- [x] **Bottom Navigation Update:**
+  - Standardized bottom navigation strictly to: `Ledger | Budgets | + | Scan | Settings` (Settings taking the bottom-right spot).
+- [x] **Instagram-Style "Settings & Activity" Architecture:**
+  - Reorganized Settings into a hierarchical grouped list with top search bar, section headers ("Preferences", "Budget", "Data", "Account", "System & About"), one-line drill-down rows with chevrons (`>`), and dedicated sub-screens (`Display & Region`, `Budget & Alerts`, `Data & Backup`, `System & About`).
+  - Professional PDF ledger generation and export via Android `PdfDocument` and Android Share Sheet.
+- [x] **Multi-Currency System (INR, USD, EUR, GBP):**
+  - Instant dynamic formatting via `PreferencesManager.preferredCurrencyFlow` across all UI surfaces, ledger entries, voucher details, and statistics.
+- [x] **sRGB Pastel Color Palette & Light/Dark Theme Engine:**
+  - Replaced high-intensity green tones with curated, gentle sRGB pastel palettes: **Atelier Canvas** (Sand), **Lavender Dusk**, **Sage Mist**, **Rose Quartz**, and **Slate Navy**.
+  - Dynamic Light and Dark mode toggles with high contrast text legibility.
+- [x] **Precision Budget Limits & Period Filtering:**
+  - Fixed period end boundaries in `BudgetUseCases.kt` and `GetDashboardSummaryUseCase.kt` to cover `00:00:00.000` to `23:59:59.999`.
+  - Added interactive period filter chips (`All`, `Daily`, `Weekly`, `Monthly`, `Category`) on `BudgetScreen` with category selection dropdown for category budgets.
+  - Dynamic Dashboard Safe-to-Spend pacing reflecting actual daily ceiling (`dailyBudget - todayDebits`) or monthly pacing (`monthlyBudget / daysRemaining`).
+- [x] **Interactive Expense Calendar DatePicker:**
+  - Material 3 `DatePickerDialog` + `DatePicker` integrated into `AddEditExpenseScreen` and `QuickAddBottomSheet` with clickable "Stamp Timestamp" surface and timezone-safe UTC-to-local conversion.
+
 ---
 
 ### Verification Summary
-- **Unit Tests:** 63/63 tests passing (100% pass rate).
-- **Compilation:** Clean Kotlin & Gradle build (`BUILD SUCCESSFUL`).
-- **Device Deployment:** Debug APK installed on phone (`e19e717f`), `MainActivity` focused and running stably without crashes.
-- **Demo Data Verification:** Seeder tested and ready for 1-tap live data population on phone.
+- **Unit Tests:** 100% pass rate (`BUILD SUCCESSFUL`).
+- **Compilation:** Clean Kotlin & Gradle build.
+- **Device Deployment:** Debug APK installed and verified live on connected phone (`e19e717f`).
+

@@ -65,6 +65,7 @@ app/src/main/java/com/smartspend/app/
 │   ├── backup/             # BackupRestoreScreen & ViewModel
 │   ├── report/             # ReportsScreen & ViewModel (Visual trends & breakdowns)
 │   ├── split/              # SplitExpenseScreen & ViewModel (Split bill & WhatsApp sharing)
+│   ├── settings/           # SettingsScreen, SettingsViewModel, PdfExporter (Instagram-style hierarchy)
 │   ├── export/             # ExportDialog (CSV / Share Sheet)
 │   ├── assisted/
 │   │   ├── quickadd/       # QuickAddBottomSheet & QuickAddViewModel (Natural Language)
@@ -78,9 +79,13 @@ app/src/main/java/com/smartspend/app/
 
 ---
 
-## Financial Intelligence & AI Grounding Invariants
+## Financial Intelligence, Theming & Engine Invariants
 1. **Zero Hallucinations:** Ask SmartSpend engine executes deterministic SQL queries on the user's local Room database and applies mathematical formulas (Safe-to-Spend, 50/30/20 ratio, Health Score). No generative models invent financial numbers.
 2. **Deficit-Tolerant Accounting:** Pacing run-rates, safe daily allowances, and simulation results gracefully handle negative cash flows and budget overruns with explicit advice and warnings.
 3. **Hardware Keystore AES-256 Backups:** `.smartspend` export bundles are encrypted with AES-GCM-256 using key material guarded by the Android Keystore.
 4. **Cent-Exact Split Math:** Bill splitting uses integer cent remainders assigned to the payer, ensuring `sum(participants) == totalAmount` with zero rounding loss.
 5. **IST Timezone Grace Buffer:** Habit streaks operate in `Asia/Kolkata` with a 24-hour grace window to preserve streaks when transactions are recorded the following morning.
+6. **Multi-Currency Global Formatting:** `MoneyUtils.format()` formats amounts with their currency prefix/symbol according to `PreferencesManager.preferredCurrencyFlow` (`INR`, `USD`, `EUR`, `GBP`).
+7. **Atelier sRGB Pastel System:** Dynamic Light and Dark modes with curated low-strain pastel variants (`Atelier Canvas`, `Lavender Dusk`, `Sage Mist`, `Rose Quartz`, `Slate Navy`).
+8. **Epoch-Accurate Budgeting:** Period filters (`DAILY`, `WEEKLY`, `MONTHLY`, `CATEGORY`, `YEARLY`) span strict timestamps from `00:00:00.000` to `23:59:59.999`.
+
