@@ -1,9 +1,13 @@
 package com.smartspend.app.feature.onboarding
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.smartspend.app.core.datastore.PreferencesManager
 import com.smartspend.app.domain.model.AuthType
+import com.smartspend.app.domain.usecase.backup.EncryptedRestoreUseCase
+import com.smartspend.app.domain.usecase.backup.RestoreSummary
 import com.smartspend.app.domain.usecase.profile.CreateProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +26,9 @@ data class OnboardingUiState(
     val patternHint: String = "Connect at least 4 dots",
     val biometricEnabled: Boolean = false,
     val isLoading: Boolean = false,
+    val isRestoring: Boolean = false,
+    val restoreSummary: RestoreSummary? = null,
+    val restoreSuccessMessage: String? = null,
     val errorMessage: String? = null,
     val isSuccess: Boolean = false
 )
@@ -29,6 +36,7 @@ data class OnboardingUiState(
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val createProfileUseCase: CreateProfileUseCase,
+    private val encryptedRestoreUseCase: EncryptedRestoreUseCase,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
@@ -156,6 +164,55 @@ class OnboardingViewModel @Inject constructor(
                     )
                 }
             )
+        }
+    }
+
+    fun restoreFromBackup(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isRestoring = true,
+                errorMessage = null,
+                restoreSummary = null,
+                restoreSuccessMessage = null
+            )
+
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                if (inputStream == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isRestoring = false,
+                        errorMessage = "Could not read selected backup file"
+                    )
+                    return@launch
+                }
+
+                val result = encryptedRestoreUseCase.restoreBackup(inputStream, targetProfileId = null)
+                result.fold(
+                    onSuccess = { summary ->
+                        val restoredId = summary.restoredProfileId
+                        if (!restoredId.isNullOrBlank()) {
+                            preferencesManager.setActiveProfileId(restoredId)
+                        }
+                        _uiState.value = _uiState.value.copy(
+                            isRestoring = false,
+                            restoreSummary = summary,
+                            restoreSuccessMessage = "All data restored successfully!",
+                            isSuccess = true
+                        )
+                    },
+                    onFailure = { error ->
+                        _uiState.value = _uiState.value.copy(
+                            isRestoring = false,
+                            errorMessage = "Restore failed: ${error.localizedMessage ?: error.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isRestoring = false,
+                    errorMessage = e.localizedMessage ?: "Failed to restore backup"
+                )
+            }
         }
     }
 }

@@ -1,5 +1,9 @@
 package com.smartspend.app.feature.onboarding
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,16 +15,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -33,13 +45,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.smartspend.app.core.ui.components.DoubleHairlineRule
+import com.smartspend.app.core.ui.components.HairlineDivider
 import com.smartspend.app.core.ui.components.PatternLockView
 import com.smartspend.app.core.ui.theme.AtelierAmber
 import com.smartspend.app.core.ui.theme.AtelierAmberSubtle
@@ -58,7 +73,16 @@ fun OnboardingScreen(
     onOnboardingComplete: () -> Unit,
     viewModel: OnboardingViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
+
+    val restoreFilePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            viewModel.restoreFromBackup(context, uri)
+        }
+    }
 
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
@@ -88,9 +112,38 @@ fun OnboardingScreen(
             color = AtelierInkMuted
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         DoubleHairlineRule()
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Restore Success Notification
+        state.restoreSummary?.let { summary ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = AtelierSageSubtle)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = AtelierSage)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "🎉 All data restored!",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = AtelierSage
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "• ${summary.expensesCount} Expenses restored\n• ${summary.incomesCount} Income records restored\n• ${summary.categoriesCount} Categories restored\n• ${summary.accountsCount} Accounts restored\n• ${summary.savingsGoalsCount} Savings Goals restored",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AtelierPrimaryInk
+                    )
+                }
+            }
+        }
 
         // Profile Name Field
         OutlinedTextField(
@@ -246,15 +299,16 @@ fun OnboardingScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
+        // Submit New Profile Button
         Button(
             onClick = viewModel::submit,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(8.dp),
-            enabled = !state.isLoading,
+            enabled = !state.isLoading && !state.isRestoring,
             colors = ButtonDefaults.buttonColors(
                 containerColor = AtelierPrimaryInk,
                 contentColor = AtelierCanvas
@@ -265,6 +319,58 @@ fun OnboardingScreen(
             } else {
                 Text(
                     text = "Initialize Ledger & Start",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        // Divider with OR
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HairlineDivider(modifier = Modifier.weight(1f))
+            Text(
+                text = "OR",
+                modifier = Modifier.padding(horizontal = 12.dp),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = AtelierInkMuted
+            )
+            HairlineDivider(modifier = Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        // Restore Backup Button for Fresh APK / Reset Recovery
+        OutlinedButton(
+            onClick = { restoreFilePicker.launch(arrayOf("*/*")) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, AtelierAmber),
+            enabled = !state.isLoading && !state.isRestoring,
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = AtelierPrimaryInk)
+        ) {
+            if (state.isRestoring) {
+                CircularProgressIndicator(color = AtelierAmber, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Restoring Backup...",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.CloudDownload,
+                    contentDescription = null,
+                    tint = AtelierAmber,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Restore Backup (.enc / .smartspend)",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
             }

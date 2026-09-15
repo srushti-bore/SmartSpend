@@ -20,7 +20,7 @@ interface PaymentMethodDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPaymentMethods(methods: List<PaymentMethodEntity>)
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPaymentMethod(method: PaymentMethodEntity)
 
     @Update

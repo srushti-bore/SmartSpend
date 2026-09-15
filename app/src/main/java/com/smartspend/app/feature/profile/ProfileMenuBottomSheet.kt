@@ -3,6 +3,7 @@ package com.smartspend.app.feature.profile
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,19 +20,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Pattern
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -42,6 +46,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -91,7 +97,189 @@ fun ProfileMenuBottomSheet(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    // 1. Reset / Change Security Credential Modal Dialog
+    // 1. Add Profile / User Dialog
+    if (state.isAddProfileDialogOpen) {
+        AlertDialog(
+            onDismissRequest = viewModel::closeAddProfileDialog,
+            containerColor = AtelierCanvas,
+            title = {
+                Text(
+                    text = "Create New User Profile",
+                    fontFamily = NewsreaderFontFamily,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AtelierPrimaryInk
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Create an independent ledger profile with its own transactions, accounts, and passbook lock.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AtelierInkMuted
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    OutlinedTextField(
+                        value = state.newProfileName,
+                        onValueChange = viewModel::onNewProfileNameChange,
+                        label = { Text("User / Profile Name") },
+                        placeholder = { Text("e.g., Family, Shop, Personal") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Lock Method Switcher Chips
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        AuthType.values().forEach { type ->
+                            FilterChip(
+                                selected = state.newProfileAuthType == type,
+                                onClick = { viewModel.onNewProfileAuthTypeSelected(type) },
+                                label = { Text(type.name, style = MaterialTheme.typography.labelSmall) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = AtelierPrimaryInk,
+                                    selectedLabelColor = AtelierCanvas
+                                ),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val keyboardType = if (state.newProfileAuthType == AuthType.PIN) KeyboardType.NumberPassword else KeyboardType.Password
+                    OutlinedTextField(
+                        value = state.newProfileCredential,
+                        onValueChange = viewModel::onNewProfileCredentialChange,
+                        label = { Text("Set ${state.newProfileAuthType.name}") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = state.newProfileConfirmCredential,
+                        onValueChange = viewModel::onNewProfileConfirmCredentialChange,
+                        label = { Text("Confirm ${state.newProfileAuthType.name}") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Enable Biometric Unlock",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = AtelierPrimaryInk
+                        )
+                        Switch(
+                            checked = state.newProfileBiometric,
+                            onCheckedChange = viewModel::onNewProfileBiometricToggle,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = AtelierCanvas,
+                                checkedTrackColor = AtelierPrimaryInk
+                            )
+                        )
+                    }
+
+                    if (!state.newProfileErrorMessage.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = state.newProfileErrorMessage ?: "",
+                            color = AtelierCoral,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = viewModel::createNewProfile,
+                    enabled = !state.isCreatingProfile,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AtelierPrimaryInk,
+                        contentColor = AtelierCanvas
+                    ),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    if (state.isCreatingProfile) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = AtelierCanvas, strokeWidth = 2.dp)
+                    } else {
+                        Text("Create Profile")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::closeAddProfileDialog) {
+                    Text("Cancel", color = AtelierInkMuted)
+                }
+            }
+        )
+    }
+
+    // 2. Delete Single Profile Confirmation Dialog
+    state.profileToDelete?.let { profileToDelete ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissDeleteProfile,
+            containerColor = AtelierCanvas,
+            title = {
+                Text(
+                    text = "Delete Profile '${profileToDelete.name}'?",
+                    fontFamily = NewsreaderFontFamily,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AtelierCoral
+                )
+            },
+            text = {
+                Text(
+                    text = "All vouchers, categories, budgets, and savings goals under '${profileToDelete.name}' will be permanently erased. Other profiles remain safe.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AtelierPrimaryInk
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = viewModel::executeDeleteProfile,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AtelierCoral,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text("Delete Profile")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissDeleteProfile) {
+                    Text("Cancel", color = AtelierInkMuted)
+                }
+            }
+        )
+    }
+
+    // 3. Reset / Change Security Credential Modal Dialog
     if (state.isResetPinDialogOpen) {
         AlertDialog(
             onDismissRequest = viewModel::closeResetPinDialog,
@@ -242,14 +430,14 @@ fun ProfileMenuBottomSheet(
         )
     }
 
-    // 2. Delete Account Confirmation Modal
+    // 4. Delete Account Confirmation Modal
     if (state.isDeleteAccountDialogOpen) {
         AlertDialog(
             onDismissRequest = viewModel::closeDeleteAccountDialog,
             containerColor = AtelierCanvas,
             title = {
                 Text(
-                    text = "Delete Account & Wipe Database?",
+                    text = "Delete All Data & Wipe Device?",
                     fontFamily = NewsreaderFontFamily,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
@@ -258,7 +446,7 @@ fun ProfileMenuBottomSheet(
             },
             text = {
                 Text(
-                    text = "This will permanently erase all ledger vouchers, budgets, categories, and encryption keys from your device. This action is irreversible.",
+                    text = "This will permanently erase all ledger vouchers, profiles, budgets, categories, and encryption keys from your device. This action is irreversible.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = AtelierPrimaryInk
                 )
@@ -347,7 +535,7 @@ fun ProfileMenuBottomSheet(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "PRIMARY LEDGER • FOLIO NO. 412",
+                            text = "PRIMARY LEDGER • ${profile?.primaryAuthType?.name ?: "SECURE"} LOCK",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                             color = AtelierInkMuted
                         )
@@ -384,7 +572,113 @@ fun ProfileMenuBottomSheet(
             DoubleHairlineRule()
             Spacer(modifier = Modifier.height(18.dp))
 
-            // 1. THEME MODE SELECTOR (LIGHT / DARK / SYSTEM)
+            // 1. MULTI-USER PROFILES SWITCHER
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SectionLabel(text = "User Profiles & Ledgers")
+                TextButton(
+                    onClick = viewModel::openAddProfileDialog,
+                    modifier = Modifier.height(28.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = AtelierAmber)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Add Profile", fontSize = 12.sp, color = AtelierAmber, fontWeight = FontWeight.SemiBold)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                state.allProfiles.forEach { p ->
+                    val isActive = p.id == profile?.id
+                    val pMonogram = p.name.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("").ifBlank { "U" }
+
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (isActive) AtelierSurfaceChalk else AtelierCanvas,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(
+                                width = if (isActive) 1.5.dp else 1.dp,
+                                color = if (isActive) AtelierAmber else AtelierHairline,
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .clickable {
+                                if (!isActive) {
+                                    viewModel.switchProfile(p.id)
+                                }
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isActive) AtelierAmberSubtle else AtelierSurfaceChalk),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = pMonogram,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = if (isActive) AtelierPrimaryInk else AtelierInkMuted
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = p.name,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium
+                                        ),
+                                        color = AtelierPrimaryInk
+                                    )
+                                    if (isActive) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        AtelierPillBadge(text = "ACTIVE", backgroundColor = AtelierAmberSubtle, contentColor = AtelierAmber)
+                                    }
+                                }
+                                Text(
+                                    text = "Lock: ${p.primaryAuthType.name} ${if (p.biometricEnabled) "• Biometric" else ""}",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                    color = AtelierInkMuted
+                                )
+                            }
+
+                            if (state.allProfiles.size > 1) {
+                                IconButton(
+                                    onClick = { viewModel.confirmDeleteProfile(p) },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete Profile",
+                                        tint = AtelierCoral,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+            HairlineDivider()
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // 2. THEME MODE SELECTOR (LIGHT / DARK / SYSTEM)
             SectionLabel(text = "Appearance & Interface Theme")
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -419,7 +713,7 @@ fun ProfileMenuBottomSheet(
             HairlineDivider()
             Spacer(modifier = Modifier.height(18.dp))
 
-            // 2. SECURITY & AUTHENTICATION ACTIONS
+            // 3. SECURITY & AUTHENTICATION ACTIONS
             SectionLabel(text = "Passbook Security & Credentials")
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -463,9 +757,54 @@ fun ProfileMenuBottomSheet(
             HairlineDivider()
             Spacer(modifier = Modifier.height(18.dp))
 
-            // 3. DANGER ZONE: DATA WIPE & ACCOUNT RESET
+            // 4. DANGER ZONE: DATA WIPE & ACCOUNT RESET
             SectionLabel(text = "Danger Zone", color = AtelierCoral)
             Spacer(modifier = Modifier.height(10.dp))
+
+            val active = state.activeProfile
+            if (state.allProfiles.size > 1 && active != null) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.confirmDeleteProfile(active) }
+                        .border(1.dp, AtelierCoral.copy(alpha = 0.5f), RoundedCornerShape(4.dp)),
+                    shape = RoundedCornerShape(4.dp),
+                    color = AtelierCoralSubtle.copy(alpha = 0.25f)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            tint = AtelierCoral,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Delete Current Profile ('${active.name}')",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = AtelierCoral
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Permanently erase this profile and switch to remaining user",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                color = AtelierInkMuted
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+            }
 
             Surface(
                 modifier = Modifier
@@ -473,7 +812,7 @@ fun ProfileMenuBottomSheet(
                     .clickable { viewModel.openDeleteAccountDialog() }
                     .border(1.dp, AtelierCoral.copy(alpha = 0.4f), RoundedCornerShape(4.dp)),
                 shape = RoundedCornerShape(4.dp),
-                color = AtelierCoralSubtle.copy(alpha = 0.3f)
+                color = AtelierCoralSubtle.copy(alpha = 0.15f)
             ) {
                 Row(
                     modifier = Modifier
@@ -490,7 +829,7 @@ fun ProfileMenuBottomSheet(
                     Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Delete Account & Wipe Database",
+                            text = if (state.allProfiles.size > 1) "Factory Reset & Wipe All Profiles" else "Delete All Data & Reset App",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -499,7 +838,7 @@ fun ProfileMenuBottomSheet(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Permanently reset app to fresh onboarding state",
+                            text = if (state.allProfiles.size > 1) "Permanently erases ALL ${state.allProfiles.size} user profiles" else "Permanently reset app and erase all profiles",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                             color = AtelierInkMuted
                         )

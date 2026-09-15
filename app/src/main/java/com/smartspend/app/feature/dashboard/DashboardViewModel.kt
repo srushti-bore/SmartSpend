@@ -33,6 +33,7 @@ data class DashboardUiState(
     val activeProfileId: String = "",
     val profileName: String = "",
     val preferredCurrency: String = "INR",
+    val isAiEnabled: Boolean = false,
     val todayDebits: BigDecimal = BigDecimal.ZERO,
     val carryoverSurplus: BigDecimal = BigDecimal.ZERO,
     val sevenDayAvgDebit: BigDecimal = BigDecimal.ZERO,
@@ -111,6 +112,12 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.preferredCurrencyFlow.collect { curr ->
                 _uiState.update { it.copy(preferredCurrency = curr) }
+            }
+        }
+
+        viewModelScope.launch {
+            preferencesManager.aiEnabledFlow.collect { enabled ->
+                _uiState.update { it.copy(isAiEnabled = enabled) }
             }
         }
 

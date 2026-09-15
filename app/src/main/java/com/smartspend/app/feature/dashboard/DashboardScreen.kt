@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CheckCircle
@@ -33,6 +34,10 @@ import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Tram
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -73,6 +78,7 @@ import com.smartspend.app.core.ui.theme.AtelierCoral
 import com.smartspend.app.core.ui.theme.AtelierCoralSubtle
 import com.smartspend.app.core.ui.theme.AtelierHairline
 import com.smartspend.app.core.ui.theme.AtelierInkMuted
+import com.smartspend.app.core.ui.theme.AtelierLavender
 import com.smartspend.app.core.ui.theme.AtelierPeriwinkle
 import com.smartspend.app.core.ui.theme.AtelierPeriwinkleSubtle
 import com.smartspend.app.core.ui.theme.AtelierPrimaryInk
@@ -90,6 +96,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onNavigateToAddExpense: () -> Unit,
@@ -108,6 +115,7 @@ fun DashboardScreen(
     onNavigateToBackupRestore: () -> Unit,
     onNavigateToSplitExpense: () -> Unit,
     onOpenFullFormWithDraft: (ParsedExpenseDraft) -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     onLogout: () -> Unit = {},
     onAccountReset: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
@@ -118,6 +126,7 @@ fun DashboardScreen(
     var showVoiceSheet by remember { mutableStateOf(false) }
     var showExportModal by remember { mutableStateOf(false) }
     var showProfileMenuSheet by remember { mutableStateOf(false) }
+    var showAiDisabledDialog by remember { mutableStateOf(false) }
     val profileSheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(state.toastMessage) {
@@ -130,6 +139,50 @@ fun DashboardScreen(
     if (state.isLoading) {
         LoadingState(message = "Reading General Ledger...")
         return
+    }
+
+    // AI Disabled Modal Dialog
+    if (showAiDisabledDialog) {
+        AlertDialog(
+            onDismissRequest = { showAiDisabledDialog = false },
+            containerColor = AtelierCanvas,
+            title = {
+                Text(
+                    text = "AI Features Disabled",
+                    fontFamily = NewsreaderFontFamily,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AtelierPrimaryInk
+                )
+            },
+            text = {
+                Text(
+                    text = "SmartSpend AI features (BudgetBrain, conversational chat, leak hunting & spend forecasts) are currently disabled. Please enable AI and configure your Google Gemini API Key in Settings.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AtelierPrimaryInk
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showAiDisabledDialog = false
+                        onNavigateToSettings()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AtelierPrimaryInk,
+                        contentColor = AtelierCanvas
+                    ),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text("Open Settings")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAiDisabledDialog = false }) {
+                    Text("Cancel", color = AtelierInkMuted)
+                }
+            }
+        )
     }
 
     val summary = state.summary
@@ -188,8 +241,7 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { onNavigateToIntelligenceHub() }
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
@@ -220,6 +272,24 @@ fun DashboardScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        IconButton(
+                            onClick = {
+                                if (state.isAiEnabled) {
+                                    onNavigateToIntelligenceHub()
+                                } else {
+                                    showAiDisabledDialog = true
+                                }
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = "AI Intelligence",
+                                tint = if (state.isAiEnabled) AtelierLavender else AtelierInkMuted,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
                         IconButton(
                             onClick = onNavigateToAccounts,
                             modifier = Modifier.size(32.dp)

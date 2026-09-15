@@ -18,15 +18,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -37,9 +40,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -51,7 +56,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.smartspend.app.core.ui.theme.BrandPrimary
 import com.smartspend.app.core.ui.theme.PastelBlue
@@ -67,12 +75,168 @@ fun BackupRestoreScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
 
+    val createBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri: Uri? ->
+        if (uri != null) {
+            viewModel.openExportPasswordDialog(ExportActionType.SAVE_TO_URI, uri)
+        }
+    }
+
     val restoreFilePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri != null) {
-            viewModel.restoreFromBackupFile(context, uri)
+            viewModel.onRestoreFilePicked(context, uri)
         }
+    }
+
+    // 1. Export Password Dialog
+    if (uiState.isExportPasswordDialogOpen) {
+        AlertDialog(
+            onDismissRequest = viewModel::closeExportPasswordDialog,
+            icon = {
+                Icon(Icons.Default.Key, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(28.dp))
+            },
+            title = {
+                Text(
+                    text = "Set Backup Password",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Enter a password to encrypt your .enc backup archive. You will need this exact password to decrypt and restore your data.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    OutlinedTextField(
+                        value = uiState.exportPasswordInput,
+                        onValueChange = viewModel::onExportPasswordChange,
+                        label = { Text("Backup Password") },
+                        placeholder = { Text("Min 4 characters") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = uiState.exportConfirmPasswordInput,
+                        onValueChange = viewModel::onExportConfirmPasswordChange,
+                        label = { Text("Confirm Backup Password") },
+                        placeholder = { Text("Re-enter password") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    if (!uiState.exportPasswordErrorMessage.isNullOrBlank()) {
+                        Text(
+                            text = uiState.exportPasswordErrorMessage ?: "",
+                            color = StatusDanger,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.confirmAndExecuteExport(context) },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
+                ) {
+                    Text("Set & Export", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::closeExportPasswordDialog) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // 2. Restore Password Dialog
+    if (uiState.isRestorePasswordDialogOpen) {
+        AlertDialog(
+            onDismissRequest = viewModel::closeRestorePasswordDialog,
+            icon = {
+                Icon(Icons.Default.Lock, contentDescription = null, tint = PastelBlue, modifier = Modifier.size(28.dp))
+            },
+            title = {
+                Text(
+                    text = "Enter Backup Password",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Enter the encryption password that was set when this .enc backup file was generated.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    OutlinedTextField(
+                        value = uiState.restorePasswordInput,
+                        onValueChange = viewModel::onRestorePasswordChange,
+                        label = { Text("Password") },
+                        placeholder = { Text("Enter backup password") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    if (!uiState.restorePasswordErrorMessage.isNullOrBlank()) {
+                        Text(
+                            text = uiState.restorePasswordErrorMessage ?: "",
+                            color = StatusDanger,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.executeRestoreWithPassword(context) },
+                    enabled = !uiState.isRestoring,
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
+                ) {
+                    if (uiState.isRestoring) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.Black, strokeWidth = 2.dp)
+                    } else {
+                        Text("Decrypt & Restore", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = viewModel::closeRestorePasswordDialog,
+                    enabled = !uiState.isRestoring
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -111,14 +275,37 @@ fun BackupRestoreScreen(
                     Icon(Icons.Default.Security, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Backups are cryptographically encrypted with AES-256 via Android Keystore. Your financial data is unreadable to third parties.",
+                        text = "Backups are cryptographically encrypted with AES-256 via Android Keystore & custom passwords. Your financial data is unreadable to third parties.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
 
-            // Restore Success Notification
+            // Success Notification
+            if (!uiState.successMessage.isNullOrBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = StatusSuccess.copy(alpha = 0.12f)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = StatusSuccess, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = uiState.successMessage ?: "",
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = StatusSuccess
+                        )
+                    }
+                }
+            }
+
+            // Restore Summary Card
             uiState.restoreSummary?.let { summary ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -179,32 +366,48 @@ fun BackupRestoreScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text("Export Encrypted Backup", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                            Text("Generate `.smartspend` secure snapshot", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Generate `expense_backup_YYYY_MM_DD.enc` file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Exports all expenses, incomes, wallets, budgets, subscriptions, and goals into an encrypted archive you can save to Google Drive or local storage.",
+                        text = "Exports all expenses, incomes, wallets, budgets, subscriptions, and goals into a password-encrypted archive you can save to Google Drive, Downloads, or share.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(
-                        onClick = { viewModel.exportEncryptedBackup(context) },
-                        enabled = !uiState.isExporting,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
-                        modifier = Modifier.fillMaxWidth()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        if (uiState.isExporting) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.Black, strokeWidth = 2.dp)
-                        } else {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Create & Share Backup", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Button(
+                            onClick = { createBackupLauncher.launch(viewModel.generateBackupFileName()) },
+                            enabled = !uiState.isExporting,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            if (uiState.isExporting) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.Black, strokeWidth = 2.dp)
+                            } else {
+                                Icon(Icons.Default.CloudDownload, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Download (.enc)", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = { viewModel.openExportPasswordDialog(ExportActionType.SHARE) },
+                            enabled = !uiState.isExporting,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Share Backup", fontSize = 12.sp)
                         }
                     }
                 }
@@ -230,13 +433,13 @@ fun BackupRestoreScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text("Restore from Backup", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                            Text("Import `.smartspend` file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Import `.enc` or `.smartspend` file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Select a previously exported `.smartspend` file to decrypt and restore your complete financial ledger.",
+                        text = "Select a previously exported `.enc` or `.smartspend` file to decrypt and restore your complete financial ledger.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

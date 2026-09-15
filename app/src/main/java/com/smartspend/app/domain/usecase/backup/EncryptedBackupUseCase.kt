@@ -42,7 +42,7 @@ class EncryptedBackupUseCase @Inject constructor(
     private val keystoreManager: KeystoreManager
 ) {
 
-    suspend fun createBackup(profileId: String, destinationFile: File): Result<File> {
+    suspend fun createBackup(profileId: String, destinationFile: File, password: String? = null): Result<File> {
         return try {
             val profile = profileRepository.getProfileById(profileId)
                 ?: return Result.failure(IllegalArgumentException("Profile not found"))
@@ -57,10 +57,21 @@ class EncryptedBackupUseCase @Inject constructor(
             val savingsGoals = savingsGoalRepository.getAllSavingsGoals(profileId).first()
 
             val rootJson = JSONObject().apply {
-                put("version", 1)
+                put("version", 2)
                 put("profileId", profileId)
                 put("profileName", profile.name)
                 put("exportedAt", System.currentTimeMillis())
+
+                // Full Profile Entity
+                put("profile", JSONObject().apply {
+                    put("id", profile.id)
+                    put("name", profile.name)
+                    put("primaryAuthType", profile.primaryAuthType.name)
+                    put("credentialSalt", profile.credentialSalt)
+                    put("credentialHash", profile.credentialHash)
+                    put("biometricEnabled", profile.biometricEnabled)
+                    put("createdAt", profile.createdAt)
+                })
 
                 // Categories
                 put("categories", JSONArray().apply {
@@ -165,7 +176,7 @@ class EncryptedBackupUseCase @Inject constructor(
                     }
                 })
 
-                // Savings Goals
+                // Savings Goals & Contributions
                 put("savingsGoals", JSONArray().apply {
                     savingsGoals.forEach {
                         put(JSONObject().apply {
@@ -174,14 +185,19 @@ class EncryptedBackupUseCase @Inject constructor(
                             put("targetAmount", it.targetAmount.toPlainString())
                             put("currentAmount", it.currentAmount.toPlainString())
                             put("targetDate", it.targetDate)
+                            put("currency", it.currency)
+                            put("color", it.color ?: "")
+                            put("icon", it.icon ?: "")
+                            put("isArchived", it.isArchived)
                         })
                     }
                 })
             }
 
             val payloadStr = rootJson.toString()
-            val encryptedPayload = keystoreManager.encrypt(payloadStr)
+            val encryptedPayload = keystoreManager.encrypt(payloadStr, password)
 
+            destinationFile.parentFile?.mkdirs()
             FileOutputStream(destinationFile).use { fos ->
                 fos.write(encryptedPayload.toByteArray(Charsets.UTF_8))
             }

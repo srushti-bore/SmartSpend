@@ -20,7 +20,7 @@ interface AccountDao {
     @Query("SELECT * FROM accounts WHERE profileId = :profileId AND id = :id LIMIT 1")
     suspend fun getAccountById(profileId: String, id: String): AccountEntity?
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAccount(account: AccountEntity)
 
     @Update

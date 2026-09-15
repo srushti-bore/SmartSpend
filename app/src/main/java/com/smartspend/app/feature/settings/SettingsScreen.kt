@@ -1,5 +1,7 @@
 package com.smartspend.app.feature.settings
 
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,6 +20,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,8 +38,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.BrightnessAuto
@@ -46,19 +51,24 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -101,6 +111,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -136,7 +147,9 @@ import java.util.Date
 import java.util.Locale
 
 enum class SettingsSubScreen(val title: String) {
+    PROFILES_USERS("Profiles & Multi-User"),
     DISPLAY_REGION("Display & Region"),
+    AI_INTELLIGENCE("AI Features & Gemini API"),
     BUDGET_ALERTS("Budget & Alerts"),
     ACCOUNT_SECURITY("Account & Security"),
     DATA_BACKUP("Data & Backup"),
@@ -177,7 +190,7 @@ fun SettingsScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri != null) {
-            viewModel.restoreFromBackupFile(context, uri)
+            viewModel.onRestoreFilePicked(context, uri)
         }
     }
 
@@ -376,6 +389,346 @@ fun SettingsScreen(
         )
     }
 
+    // 3. Add Profile / User Dialog
+    if (state.isAddProfileDialogOpen) {
+        AlertDialog(
+            onDismissRequest = viewModel::closeAddProfileDialog,
+            containerColor = AtelierCanvas,
+            title = {
+                Text(
+                    text = "Create New User Profile",
+                    fontFamily = NewsreaderFontFamily,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AtelierPrimaryInk
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Create an independent ledger profile with its own transactions, accounts, and passbook lock.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AtelierInkMuted
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    OutlinedTextField(
+                        value = state.newProfileName,
+                        onValueChange = viewModel::onNewProfileNameChange,
+                        label = { Text("User / Profile Name") },
+                        placeholder = { Text("e.g., Family, Shop, Personal") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Lock Method Switcher Chips
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        AuthType.values().forEach { type ->
+                            FilterChip(
+                                selected = state.newProfileAuthType == type,
+                                onClick = { viewModel.onNewProfileAuthTypeSelected(type) },
+                                label = { Text(type.name, style = MaterialTheme.typography.labelSmall) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = AtelierPrimaryInk,
+                                    selectedLabelColor = AtelierCanvas
+                                ),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val keyboardType = if (state.newProfileAuthType == AuthType.PIN) KeyboardType.NumberPassword else KeyboardType.Password
+                    OutlinedTextField(
+                        value = state.newProfileCredential,
+                        onValueChange = viewModel::onNewProfileCredentialChange,
+                        label = { Text("Set ${state.newProfileAuthType.name}") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = state.newProfileConfirmCredential,
+                        onValueChange = viewModel::onNewProfileConfirmCredentialChange,
+                        label = { Text("Confirm ${state.newProfileAuthType.name}") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Enable Biometric Unlock",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = AtelierPrimaryInk
+                        )
+                        Switch(
+                            checked = state.newProfileBiometric,
+                            onCheckedChange = viewModel::onNewProfileBiometricToggle,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = AtelierCanvas,
+                                checkedTrackColor = AtelierPrimaryInk
+                            )
+                        )
+                    }
+
+                    if (!state.newProfileErrorMessage.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = state.newProfileErrorMessage ?: "",
+                            color = AtelierCoral,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = viewModel::createNewProfile,
+                    enabled = !state.isCreatingProfile,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AtelierPrimaryInk,
+                        contentColor = AtelierCanvas
+                    ),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    if (state.isCreatingProfile) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = AtelierCanvas, strokeWidth = 2.dp)
+                    } else {
+                        Text("Create Profile")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::closeAddProfileDialog) {
+                    Text("Cancel", color = AtelierInkMuted)
+                }
+            }
+        )
+    }
+
+    // 4. Delete Single Profile Confirmation Dialog
+    state.profileToDelete?.let { profileToDelete ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissDeleteProfile,
+            containerColor = AtelierCanvas,
+            title = {
+                Text(
+                    text = "Delete Profile '${profileToDelete.name}'?",
+                    fontFamily = NewsreaderFontFamily,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AtelierCoral
+                )
+            },
+            text = {
+                Text(
+                    text = "All vouchers, categories, budgets, and savings goals under '${profileToDelete.name}' will be permanently erased. Other profiles remain safe.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AtelierPrimaryInk
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = viewModel::executeDeleteProfile,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AtelierCoral,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text("Delete Profile")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissDeleteProfile) {
+                    Text("Cancel", color = AtelierInkMuted)
+                }
+            }
+        )
+    }
+
+    // 5. Export Password Dialog
+    if (state.isExportPasswordDialogOpen) {
+        AlertDialog(
+            onDismissRequest = viewModel::closeExportPasswordDialog,
+            containerColor = AtelierCanvas,
+            title = {
+                Text(
+                    text = "Set Backup Password",
+                    fontFamily = NewsreaderFontFamily,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AtelierPrimaryInk
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Protect your .enc backup with an encryption password. You will need this exact password when restoring this file.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AtelierInkMuted
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    OutlinedTextField(
+                        value = state.exportPasswordInput,
+                        onValueChange = viewModel::onExportPasswordChange,
+                        label = { Text("Backup Password") },
+                        placeholder = { Text("Min 4 characters") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = state.exportConfirmPasswordInput,
+                        onValueChange = viewModel::onExportConfirmPasswordChange,
+                        label = { Text("Confirm Password") },
+                        placeholder = { Text("Re-enter password") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+
+                    if (!state.exportPasswordErrorMessage.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = state.exportPasswordErrorMessage ?: "",
+                            color = AtelierCoral,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.confirmAndExecuteExport(context) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AtelierPrimaryInk,
+                        contentColor = AtelierCanvas
+                    ),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text("Set & Export")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::closeExportPasswordDialog) {
+                    Text("Cancel", color = AtelierInkMuted)
+                }
+            }
+        )
+    }
+
+    // 6. Restore Password Dialog
+    if (state.isRestorePasswordDialogOpen) {
+        AlertDialog(
+            onDismissRequest = viewModel::closeRestorePasswordDialog,
+            containerColor = AtelierCanvas,
+            title = {
+                Text(
+                    text = "Enter Backup Password",
+                    fontFamily = NewsreaderFontFamily,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AtelierPrimaryInk
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Enter the encryption password that was used to protect this .enc backup archive.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AtelierInkMuted
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    OutlinedTextField(
+                        value = state.restorePasswordInput,
+                        onValueChange = viewModel::onRestorePasswordChange,
+                        label = { Text("Password") },
+                        placeholder = { Text("Enter backup password") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+
+                    if (!state.restorePasswordErrorMessage.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = state.restorePasswordErrorMessage ?: "",
+                            color = AtelierCoral,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.executeRestoreWithPassword(context) },
+                    enabled = !state.isRestoringBackup,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AtelierPrimaryInk,
+                        contentColor = AtelierCanvas
+                    ),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    if (state.isRestoringBackup) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = AtelierCanvas, strokeWidth = 2.dp)
+                    } else {
+                        Text("Decrypt & Restore")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = viewModel::closeRestorePasswordDialog,
+                    enabled = !state.isRestoringBackup
+                ) {
+                    Text("Cancel", color = AtelierInkMuted)
+                }
+            }
+        )
+    }
+
     // Main screen vs Sub-Screen transition
     AnimatedContent(
         targetState = activeSubScreen,
@@ -412,7 +765,9 @@ fun SettingsScreen(
                 onBack = { activeSubScreen = null }
             ) {
                 when (subScreen) {
+                    SettingsSubScreen.PROFILES_USERS -> ProfilesUsersContent(state, viewModel)
                     SettingsSubScreen.DISPLAY_REGION -> DisplayRegionContent(state, viewModel)
+                    SettingsSubScreen.AI_INTELLIGENCE -> AiIntelligenceContent(state, viewModel, context)
                     SettingsSubScreen.BUDGET_ALERTS -> BudgetAlertsContent(state, viewModel)
                     SettingsSubScreen.ACCOUNT_SECURITY -> AccountSecurityContent(state, viewModel, onLogout)
                     SettingsSubScreen.DATA_BACKUP -> DataBackupContent(state, viewModel, context, onRestoreClick = { restoreFilePicker.launch(arrayOf("*/*")) })
@@ -441,11 +796,27 @@ private fun InstagramSettingsListView(
     val allSettings = remember {
         listOf(
             SettingRowItem(
+                subScreen = SettingsSubScreen.PROFILES_USERS,
+                title = "Profiles & Multi-User",
+                subtitle = "Manage personal, family & business folios",
+                icon = Icons.Default.People,
+                iconTint = Color(0xFFD97706),
+                categoryGroup = "PREFERENCES & INTERFACE"
+            ),
+            SettingRowItem(
                 subScreen = SettingsSubScreen.DISPLAY_REGION,
                 title = "Display & Region",
                 subtitle = "Theme, currency, date & number formats",
                 icon = Icons.Default.Palette,
                 iconTint = Color(0xFFE5855E),
+                categoryGroup = "PREFERENCES & INTERFACE"
+            ),
+            SettingRowItem(
+                subScreen = SettingsSubScreen.AI_INTELLIGENCE,
+                title = "AI Features & Gemini API",
+                subtitle = "Enable/disable AI, Hardware AES-256 Gemini Key",
+                icon = Icons.Default.AutoAwesome,
+                iconTint = Color(0xFF8B5CF6),
                 categoryGroup = "PREFERENCES & INTERFACE"
             ),
             SettingRowItem(
@@ -851,8 +1222,242 @@ private fun SubScreenContainer(
 }
 
 // ==========================================
-// SUB-SCREEN CONTENTS (ALL 8 PRESERVED)
+// SUB-SCREEN CONTENTS (ALL 9 PRESERVED)
 // ==========================================
+
+@Composable
+private fun ProfilesUsersContent(state: SettingsUiState, viewModel: SettingsViewModel) {
+    // 1. Active Profile Card
+    SectionCard(title = "Active User Profile") {
+        val active = state.activeProfile
+        if (active != null) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = AtelierSurfaceChalkHigh,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.5.dp, AtelierPrimaryInk, RoundedCornerShape(8.dp))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(AtelierPrimaryInk),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = active.name.take(2).uppercase(),
+                            fontFamily = NewsreaderFontFamily,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AtelierCanvas
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = active.name,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                ),
+                                color = AtelierPrimaryInk
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(9999.dp),
+                                color = AtelierSage
+                            ) {
+                                Text(
+                                    text = "ACTIVE",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 8.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.06.sp
+                                    ),
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = "Auth: ${active.primaryAuthType.name} • ${if (active.biometricEnabled) "Biometric Enabled" else "Passcode Only"}",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            color = AtelierInkMuted
+                        )
+                    }
+
+                    if (state.allProfiles.size > 1) {
+                        IconButton(
+                            onClick = { viewModel.confirmDeleteProfile(active) },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.DeleteForever,
+                                contentDescription = "Delete This Profile",
+                                tint = AtelierCoral,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // 2. All Profiles Switcher
+    SectionCard(title = "All Profiles (${state.allProfiles.size})") {
+        Text(
+            text = "Switch between independent user accounts or family ledgers. Each profile maintains its own encrypted transactions and budgets.",
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+            color = AtelierInkMuted
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            state.allProfiles.forEach { profile ->
+                val isActive = profile.id == state.activeProfile?.id
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (isActive) AtelierSurfaceChalkHigh else AtelierCanvas,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(
+                            width = if (isActive) 1.5.dp else 1.dp,
+                            color = if (isActive) AtelierPrimaryInk else AtelierHairline,
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isActive) AtelierPrimaryInk else AtelierSurfaceChalk)
+                                    .border(1.dp, AtelierHairline, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = profile.name.take(2).uppercase(),
+                                    fontFamily = NewsreaderFontFamily,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isActive) AtelierCanvas else AtelierPrimaryInk
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column {
+                                Text(
+                                    text = profile.name,
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.SemiBold,
+                                        fontSize = 13.5.sp
+                                    ),
+                                    color = AtelierPrimaryInk
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "${profile.primaryAuthType.name} Lock",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.5.sp),
+                                    color = AtelierInkMuted
+                                )
+                            }
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            if (isActive) {
+                                Surface(
+                                    shape = RoundedCornerShape(9999.dp),
+                                    color = AtelierPrimaryInk
+                                ) {
+                                    Text(
+                                        text = "CURRENT",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 0.05.sp
+                                        ),
+                                        color = AtelierCanvas,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    )
+                                }
+                            } else {
+                                OutlinedButton(
+                                    onClick = { viewModel.switchProfile(profile.id) },
+                                    shape = RoundedCornerShape(4.dp),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                    modifier = Modifier.height(30.dp)
+                                ) {
+                                    Text("Switch", fontSize = 11.sp, color = AtelierPrimaryInk)
+                                }
+
+                                if (state.allProfiles.size > 1) {
+                                    IconButton(
+                                        onClick = { viewModel.confirmDeleteProfile(profile) },
+                                        modifier = Modifier.size(30.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.DeleteForever,
+                                            contentDescription = "Delete Profile",
+                                            tint = AtelierCoral,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        Button(
+            onClick = viewModel::openAddProfileDialog,
+            shape = RoundedCornerShape(4.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AtelierPrimaryInk,
+                contentColor = AtelierCanvas
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Add New User Profile", fontSize = 13.sp)
+        }
+    }
+}
 
 @Composable
 private fun DisplayRegionContent(state: SettingsUiState, viewModel: SettingsViewModel) {
@@ -1205,13 +1810,49 @@ private fun AccountSecurityContent(
     Spacer(modifier = Modifier.height(16.dp))
 
     SectionCard(title = "Danger Zone") {
+        if (state.allProfiles.size > 1 && state.activeProfile != null) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { viewModel.confirmDeleteProfile(state.activeProfile) }
+                    .border(1.dp, AtelierCoral.copy(alpha = 0.5f), RoundedCornerShape(4.dp)),
+                shape = RoundedCornerShape(4.dp),
+                color = AtelierCoralSubtle.copy(alpha = 0.25f)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = AtelierCoral, modifier = Modifier.size(22.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Delete Active Profile ('${state.activeProfile.name}')",
+                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold),
+                            color = AtelierCoral
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Erases only this profile's records and switches to remaining profile",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            color = AtelierInkMuted
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { viewModel.openDeleteAccountDialog() }
                 .border(1.dp, AtelierCoral.copy(alpha = 0.4f), RoundedCornerShape(4.dp)),
             shape = RoundedCornerShape(4.dp),
-            color = AtelierCoralSubtle.copy(alpha = 0.3f)
+            color = AtelierCoralSubtle.copy(alpha = 0.15f)
         ) {
             Row(
                 modifier = Modifier
@@ -1223,13 +1864,13 @@ private fun AccountSecurityContent(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Wipe Database & Reset Account",
+                        text = if (state.allProfiles.size > 1) "Factory Reset & Wipe All Profiles" else "Wipe Database & Reset Account",
                         style = MaterialTheme.typography.titleMedium.copy(fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold),
                         color = AtelierCoral
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Permanently erase all vouchers and reset to initial onboarding",
+                        text = if (state.allProfiles.size > 1) "Permanently erases ALL ${state.allProfiles.size} profiles and resets to initial onboarding" else "Permanently erase all vouchers and reset to initial onboarding",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                         color = AtelierInkMuted
                     )
@@ -1291,25 +1932,47 @@ private fun DataBackupContent(
         }
     }
 
+    val createBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri: Uri? ->
+        if (uri != null) {
+            viewModel.openExportPasswordDialog(com.smartspend.app.feature.backup.ExportActionType.SAVE_TO_URI, uri)
+        }
+    }
+
     SectionCard(title = "Hardware-Backed Encrypted Archive") {
-        Button(
-            onClick = { viewModel.exportEncryptedBackup(context) },
-            enabled = !state.isExportingBackup,
-            shape = RoundedCornerShape(4.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = AtelierPrimaryInk,
-                contentColor = AtelierCanvas
-            ),
-            modifier = Modifier.fillMaxWidth()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (state.isExportingBackup) {
-                CircularProgressIndicator(modifier = Modifier.size(16.dp), color = AtelierCanvas, strokeWidth = 2.dp)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Creating Encrypted Archive...")
-            } else {
-                Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Export Encrypted Backup (.smartspend)")
+            Button(
+                onClick = { createBackupLauncher.launch(viewModel.generateBackupFileName()) },
+                enabled = !state.isExportingBackup,
+                shape = RoundedCornerShape(4.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AtelierPrimaryInk,
+                    contentColor = AtelierCanvas
+                ),
+                modifier = Modifier.weight(1f)
+            ) {
+                if (state.isExportingBackup) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = AtelierCanvas, strokeWidth = 2.dp)
+                } else {
+                    Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Download (.enc)", fontSize = 12.sp)
+                }
+            }
+
+            OutlinedButton(
+                onClick = { viewModel.openExportPasswordDialog(com.smartspend.app.feature.backup.ExportActionType.SHARE) },
+                enabled = !state.isExportingBackup,
+                shape = RoundedCornerShape(4.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Share Backup", fontSize = 12.sp)
             }
         }
 
@@ -1328,7 +1991,7 @@ private fun DataBackupContent(
             } else {
                 Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Restore from .smartspend File")
+                Text("Restore from .enc / .smartspend File")
             }
         }
     }
@@ -2021,3 +2684,350 @@ private fun CategoryDonutChart(
         }
     }
 }
+
+// ==========================================
+// 10. AI FEATURES & GEMINI API SUB-SCREEN
+// ==========================================
+
+@Composable
+private fun AiIntelligenceContent(
+    state: SettingsUiState,
+    viewModel: SettingsViewModel,
+    context: Context
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Top Status Card
+        Surface(
+            color = if (state.isAiEnabled) AtelierSageSubtle else AtelierSurfaceChalk,
+            shape = RoundedCornerShape(12.dp),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                if (state.isAiEnabled) AtelierSage.copy(alpha = 0.4f) else AtelierHairline
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(if (state.isAiEnabled) AtelierSage.copy(alpha = 0.2f) else AtelierHairline),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AutoAwesome,
+                        contentDescription = null,
+                        tint = if (state.isAiEnabled) AtelierSage else AtelierInkMuted,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (state.isAiEnabled) "AI Intelligence Active" else "AI Intelligence Disabled",
+                        fontFamily = NewsreaderFontFamily,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (state.isAiEnabled) AtelierSage else AtelierPrimaryInk
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (state.isAiEnabled)
+                            "BudgetBrain forecasts, leak hunting, and multi-turn financial chat are enabled."
+                        else
+                            "All AI features are turned OFF. No background AI inferences or network calls will occur.",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
+                        color = AtelierInkMuted
+                    )
+                }
+            }
+        }
+
+        // Master AI Toggle Section
+        Column {
+            SectionLabel(text = "MASTER CONTROL")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Surface(
+                color = AtelierSurfaceChalk,
+                shape = RoundedCornerShape(8.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, AtelierHairline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Enable AI Features",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = AtelierPrimaryInk
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Toggle on to activate BudgetBrain chat, purchase simulation & leak alerts.",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            color = AtelierInkMuted
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Switch(
+                        checked = state.isAiEnabled,
+                        onCheckedChange = { viewModel.toggleAiEnabled() },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = AtelierCanvas,
+                            checkedTrackColor = AtelierSage,
+                            uncheckedThumbColor = AtelierInkMuted,
+                            uncheckedTrackColor = AtelierHairline
+                        )
+                    )
+                }
+            }
+        }
+
+        // Gemini API Key Configuration Section
+        Column {
+            SectionLabel(text = "SECURITY & GEMINI API KEY")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Surface(
+                color = AtelierSurfaceChalk,
+                shape = RoundedCornerShape(8.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, AtelierHairline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Key,
+                                contentDescription = null,
+                                tint = Color(0xFF8B5CF6),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Google Gemini API Key",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = AtelierPrimaryInk
+                            )
+                        }
+
+                        if (state.hasGeminiApiKey) {
+                            AtelierPillBadge(
+                                text = "✓ Configured (AES-256)",
+                                backgroundColor = AtelierSageSubtle,
+                                contentColor = AtelierSage
+                            )
+                        } else {
+                            AtelierPillBadge(
+                                text = "⚠️ Missing Key",
+                                backgroundColor = AtelierCoralSubtle,
+                                contentColor = AtelierCoral
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Your API key is never hardcoded. It is encrypted on-device using Android Keystore AES-256-GCM and stored only in private DataStore. It stays protected across logins and logouts.",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
+                        color = AtelierInkMuted
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    OutlinedTextField(
+                        value = state.geminiApiKeyInput,
+                        onValueChange = viewModel::onGeminiApiKeyChange,
+                        label = { Text(if (state.hasGeminiApiKey) "Update Gemini API Key" else "Enter Gemini API Key") },
+                        placeholder = { Text("AIzaSy...") },
+                        singleLine = true,
+                        visualTransformation = if (state.isGeminiKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        trailingIcon = {
+                            IconButton(onClick = viewModel::toggleGeminiKeyVisibility) {
+                                Icon(
+                                    imageVector = if (state.isGeminiKeyVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (state.isGeminiKeyVisible) "Hide key" else "Show key",
+                                    tint = AtelierInkMuted
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+
+                    // Error Message
+                    if (!state.aiErrorMessage.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = state.aiErrorMessage ?: "",
+                            color = AtelierCoral,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+
+                    // Success Message
+                    if (!state.aiSuccessMessage.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = state.aiSuccessMessage ?: "",
+                            color = AtelierSage,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = viewModel::saveGeminiApiKey,
+                            enabled = state.geminiApiKeyInput.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AtelierPrimaryInk,
+                                contentColor = AtelierCanvas
+                            ),
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Save & Encrypt Key")
+                        }
+
+                        if (state.hasGeminiApiKey) {
+                            OutlinedButton(
+                                onClick = viewModel::clearGeminiApiKey,
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = AtelierCoral
+                                ),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text("Remove Key")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // How to get Gemini API Key Guide
+        Column {
+            SectionLabel(text = "GETTING AN API KEY")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Surface(
+                color = AtelierSurfaceChalk,
+                shape = RoundedCornerShape(8.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, AtelierHairline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "How to get a Free Google Gemini API Key:",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = AtelierPrimaryInk
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    val steps = listOf(
+                        "1. Go to Google AI Studio (aistudio.google.com)",
+                        "2. Sign in with your Google account",
+                        "3. Click 'Get API key' and then 'Create API key'",
+                        "4. Copy your key and paste it above, then tap 'Save & Encrypt Key'"
+                    )
+
+                    steps.forEach { step ->
+                        Text(
+                            text = step,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp),
+                            color = AtelierInkMuted
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Button(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://aistudio.google.com/app/apikey"))
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            context.startActivity(intent)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF6366F1),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.OpenInNew,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Open Google AI Studio")
+                    }
+                }
+            }
+        }
+
+        // Privacy & Architecture Guarantee Card
+        Surface(
+            color = AtelierLavenderSubtle,
+            shape = RoundedCornerShape(8.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, AtelierLavender.copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp)
+            ) {
+                Text(
+                    text = "🛡️ Privacy & Encryption Guarantee",
+                    fontFamily = NewsreaderFontFamily,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AtelierLavender
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "• Zero hardcoded keys in the application APK.\n• Hardware-backed Android Keystore AES-256-GCM encryption.\n• API keys persist securely across login/logout and app restarts.\n• No financial data is ever shared with third parties.",
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp),
+                    color = AtelierPrimaryInk
+                )
+            }
+        }
+    }
+}
+
+

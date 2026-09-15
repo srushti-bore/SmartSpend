@@ -142,10 +142,64 @@
 - [x] **Interactive Expense Calendar DatePicker:**
   - Material 3 `DatePickerDialog` + `DatePicker` integrated into `AddEditExpenseScreen` and `QuickAddBottomSheet` with clickable "Stamp Timestamp" surface and timezone-safe UTC-to-local conversion.
 
+#### Phase 9: Portable Encrypted Backup (`.enc`) & Fresh APK / Onboarding Restore Flow
+- [x] **Portable Cryptographic Envelope (`SPEND_ENC_V2`):**
+  - Upgraded `KeystoreManager` to implement PBKDF2-HMAC-SHA256 (65,536 rounds) key derivation with cryptographically random 16-byte salt and 12-byte GCM IV per backup.
+
+  - Guarantees 100% cross-device, phone reset, and uninstall resilience (bypassing hardware Keystore destruction upon app wipe).
+- [x] **Dynamic File Naming (`expense_backup_YYYY_MM_DD.enc`):**
+  - Formatted default backup files dynamically to `expense_backup_YYYY_MM_DD.enc` with Android Share Sheet integration (`Intent.ACTION_SEND` / Save to Drive / Files / WhatsApp).
+- [x] **Fresh APK / Onboarding Screen Recovery Flow:**
+  - Integrated a dedicated "Restore Backup (.enc / .smartspend)" card and file picker launcher on `OnboardingScreen`.
+  - Recreates full `Profile` entity, active profile mapping in `PreferencesManager`, and restores all Categories, Payment Methods, Expenses, Incomes, Budgets, Accounts, Recurring Expenses, and Savings Goals with itemized "🎉 All data restored!" feedback.
+- [x] **Zero Regressions & Feature Integrity:**
+  - All existing features (Safe-to-Spend, Cashflow, Reports, Pastel themes, OCR scanner, NLP Quick Add, Multi-Currency, Habit Streaks) preserved 100% intact.
+
+#### Phase 10: Multi-User Profiles & Hardware-Encrypted Backup/Restore System
+- [x] **FileProvider Registration & Share Sheet Resolution:**
+  - Configured `androidx.core.content.FileProvider` in `AndroidManifest.xml` with `file_paths.xml` covering internal files and cache directories.
+  - Resolved `FileProvider.getUriForFile` `IllegalArgumentException` completely, enabling seamless backup file sharing and PDF exporting.
+- [x] **Direct Downloads Folder Saving & MediaStore Integration:**
+  - Implemented `BackupStorageHelper.saveToDownloads` writing `.enc` backup archives directly to `Downloads/SmartSpend/` on Android 10+ (`MediaStore.Downloads`) and legacy storage.
+  - Added dual "Download (.enc)" and "Share Backup" actions in `BackupRestoreScreen` and `SettingsScreen`.
+- [x] **Room Conflict Strategy (ABORT -> REPLACE):**
+  - Updated all 9 DAOs to use `OnConflictStrategy.REPLACE` for idempotent inserts during backup restores and multi-tenancy sync.
+- [x] **Multi-User Profile Switching & Management:**
+  - Added horizontal multi-user switcher row with avatar chips to `LockScreen`.
+  - Added multi-user management sub-screen to `SettingsScreen` (`ProfilesUsersContent`) with create, switch, and delete profile capabilities.
+  - Added profile switcher and in-place modal to `ProfileMenuBottomSheet`.
+- [x] **Isolated Single-Profile Deletion & Danger Zone Safety:**
+  - Enabled direct single profile deletion for both active and inactive profiles when multiple profiles exist (`allProfiles.size > 1`).
+  - Implemented `DeleteProfileUseCase` and `@Transaction deleteProfileAndAllData(profileId)` in `ProfileDao`.
+  - Separated single-profile deletion (`DeleteProfileUseCase`) from app-wide factory reset (`WipeDataUseCase`) to eliminate accidental wipe of all profiles.
+  - Fully reactive multi-tenancy across all ViewModels powered by `PreferencesManager.activeProfileIdFlow`.
+  - Fully tested on connected physical device (`CPH2757IN`).
+- [x] **Standard Android Biometric & Lock Screen:**
+  - Implemented `BiometricAuthHelper` using AndroidX `BiometricPrompt` with `BIOMETRIC_STRONG or DEVICE_CREDENTIAL` supporting Fingerprint, Face Unlock, and Android Device PIN/Pattern/Password.
+  - Converted `MainActivity` to extend `FragmentActivity` for proper BiometricPrompt lifecycle management.
+  - Built standard Android numeric PIN dialpad with animated 4-digit indicator dots and auto-unlock on 4 digits.
+  - Retained 3x3 interactive Pattern lock (`PatternLockView`) and multi-profile switcher chips.
+- [x] **Reliable Encrypted Backup (.enc) Download Engine:**
+  - Integrated Storage Access Framework (SAF) `ActivityResultContracts.CreateDocument` for user-chosen Save As in Downloads / Google Drive / Local Storage.
+  - Enhanced `BackupStorageHelper` with system download complete notifications and fallback MediaStore downloads.
+
+#### Phase 11: AI Configurable Toggle, Budget Aggregation Fix & Atelier Theme Harmonization
+- [x] **Dynamic AI Toggle & Zero Hardcoded API Key Architecture:**
+  - Integrated a master `isAiEnabled` toggle in `PreferencesManager` and `SettingsScreen` allowing users to completely enable/disable AI features.
+  - Added secure user-configured Gemini API Key input in Settings (`geminiApiKeyFlow`), eliminating hardcoded keys across the codebase and protecting against leaks.
+  - Placed dedicated AI quick-access icon in the top header bar adjacent to the bank/wallet icon for intuitive navigation.
+- [x] **Budget Aggregation & Multi-Period Pacing Fix:**
+  - Resolved multi-period budget summing bug in `BudgetScreen.kt`: A ₹60,000 Monthly envelope and a ₹2,000 Daily budget are no longer summed together into ₹62,000.
+  - Overarching Monthly cap is displayed as the primary limit, while the Daily budget is displayed cleanly as an active pacing subset (`• Includes Daily Pacing Limit of ₹2,000/day`).
+- [x] **Atelier Visual Theme Harmonization for AI Components:**
+  - Replaced jarring stark black colors on the "Ask AI" Floating Action Button in `IntelligenceHubScreen.kt` and the chat posting/sending arrow in `AskSmartSpendScreen.kt` with `AtelierAmber` (`#D97706`) and crisp white icon tints (`Color.White`).
+  - Styled AI suggestion chips, chat bubbles, and top bars using Atelier theme tokens (`AtelierCanvas`, `AtelierSurfaceChalk`, `AtelierHairline`, `AtelierPrimaryInk`).
+
 ---
 
 ### Verification Summary
 - **Unit Tests:** 100% pass rate (`BUILD SUCCESSFUL`).
-- **Compilation:** Clean Kotlin & Gradle build.
+- **Compilation:** Clean Kotlin & Gradle build (`./gradlew.bat assembleDebug`).
 - **Device Deployment:** Debug APK installed and verified live on connected phone (`e19e717f`).
+- **Logcat Runtime:** Verified clean startup with zero crashes.
 

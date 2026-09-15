@@ -178,6 +178,9 @@ fun SmartSpendNavGraph(
                     onNavigateToSplitExpense = {
                         navController.navigate(Screen.SplitExpense.route)
                     },
+                    onNavigateToSettings = {
+                        navController.navigate(Screen.Settings.route)
+                    },
                     onOpenFullFormWithDraft = { draft ->
                         navController.navigate(
                             Screen.AddExpense.createRoute(

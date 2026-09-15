@@ -3,6 +3,7 @@ package com.smartspend.app.domain.usecase.backup
 import com.smartspend.app.core.security.KeystoreManager
 import com.smartspend.app.domain.model.Account
 import com.smartspend.app.domain.model.AccountType
+import com.smartspend.app.domain.model.AuthType
 import com.smartspend.app.domain.model.Budget
 import com.smartspend.app.domain.model.BudgetType
 import com.smartspend.app.domain.model.Category
@@ -12,6 +13,7 @@ import com.smartspend.app.domain.model.Income
 import com.smartspend.app.domain.model.IncomeSource
 import com.smartspend.app.domain.model.PaymentMethod
 import com.smartspend.app.domain.model.PaymentType
+import com.smartspend.app.domain.model.Profile
 import com.smartspend.app.domain.model.RecurringExpense
 import com.smartspend.app.domain.model.RecurringFrequency
 import com.smartspend.app.domain.model.SavingsGoal
@@ -21,6 +23,7 @@ import com.smartspend.app.domain.repository.CategoryRepository
 import com.smartspend.app.domain.repository.ExpenseRepository
 import com.smartspend.app.domain.repository.IncomeRepository
 import com.smartspend.app.domain.repository.PaymentMethodRepository
+import com.smartspend.app.domain.repository.ProfileRepository
 import com.smartspend.app.domain.repository.RecurringExpenseRepository
 import com.smartspend.app.domain.repository.SavingsGoalRepository
 import org.json.JSONObject
@@ -34,11 +37,13 @@ data class RestoreSummary(
     val incomesCount: Int,
     val categoriesCount: Int,
     val accountsCount: Int,
-    val savingsGoalsCount: Int
+    val savingsGoalsCount: Int,
+    val restoredProfileId: String? = null
 )
 
 @Singleton
 class EncryptedRestoreUseCase @Inject constructor(
+    private val profileRepository: ProfileRepository,
     private val categoryRepository: CategoryRepository,
     private val paymentMethodRepository: PaymentMethodRepository,
     private val expenseRepository: ExpenseRepository,
@@ -50,16 +55,56 @@ class EncryptedRestoreUseCase @Inject constructor(
     private val keystoreManager: KeystoreManager
 ) {
 
-    suspend fun restoreBackup(profileId: String, inputStream: InputStream): Result<RestoreSummary> {
+    suspend fun restoreBackup(profileId: String, inputStream: InputStream, password: String? = null): Result<RestoreSummary> {
+        return restoreBackup(inputStream, profileId, password)
+    }
+
+    suspend fun restoreBackup(inputStream: InputStream, targetProfileId: String? = null, password: String? = null): Result<RestoreSummary> {
         return try {
             val encryptedText = inputStream.bufferedReader().use { it.readText() }
-            val decryptedJson = keystoreManager.decrypt(encryptedText)
+            val decryptedJson = keystoreManager.decrypt(encryptedText, password)
             val root = JSONObject(decryptedJson)
 
             val version = root.optInt("version", 1)
-            if (version > 1) {
+            if (version > 2) {
                 return Result.failure(IllegalStateException("Unsupported backup version $version"))
             }
+
+            var effectiveProfileId = targetProfileId
+
+            // If no profile supplied (Fresh install / reset), restore profile entity
+            if (effectiveProfileId.isNullOrBlank()) {
+                if (root.has("profile")) {
+                    val profObj = root.getJSONObject("profile")
+                    val restoredProfile = Profile(
+                        id = profObj.getString("id"),
+                        name = profObj.getString("name"),
+                        primaryAuthType = AuthType.valueOf(profObj.optString("primaryAuthType", AuthType.PIN.name)),
+                        credentialSalt = profObj.optString("credentialSalt", ""),
+                        credentialHash = profObj.optString("credentialHash", ""),
+                        biometricEnabled = profObj.optBoolean("biometricEnabled", false),
+                        createdAt = profObj.optLong("createdAt", System.currentTimeMillis())
+                    )
+                    profileRepository.createProfile(restoredProfile)
+                    effectiveProfileId = restoredProfile.id
+                } else {
+                    val legacyId = root.optString("profileId", "profile_${System.currentTimeMillis()}")
+                    val legacyName = root.optString("profileName", "Restored Profile")
+                    val restoredProfile = Profile(
+                        id = legacyId,
+                        name = legacyName,
+                        primaryAuthType = AuthType.PIN,
+                        credentialSalt = "",
+                        credentialHash = "",
+                        biometricEnabled = false,
+                        createdAt = System.currentTimeMillis()
+                    )
+                    profileRepository.createProfile(restoredProfile)
+                    effectiveProfileId = legacyId
+                }
+            }
+
+            val resolvedProfileId = effectiveProfileId ?: return Result.failure(IllegalStateException("Failed to resolve profile for restore"))
 
             // Restore Categories
             var categoriesRestored = 0
@@ -69,7 +114,7 @@ class EncryptedRestoreUseCase @Inject constructor(
                     val obj = catArray.getJSONObject(i)
                     val cat = Category(
                         id = obj.getString("id"),
-                        profileId = profileId,
+                        profileId = resolvedProfileId,
                         name = obj.getString("name"),
                         iconName = obj.optString("iconName", "category"),
                         colorHex = obj.optString("colorHex", "#80B3FF"),
@@ -87,7 +132,7 @@ class EncryptedRestoreUseCase @Inject constructor(
                     val obj = pmArray.getJSONObject(i)
                     val pm = PaymentMethod(
                         id = obj.getString("id"),
-                        profileId = profileId,
+                        profileId = resolvedProfileId,
                         type = PaymentType.valueOf(obj.getString("type")),
                         label = obj.getString("label"),
                         isCustom = obj.optBoolean("isCustom", false)
@@ -104,7 +149,7 @@ class EncryptedRestoreUseCase @Inject constructor(
                     val obj = incArray.getJSONObject(i)
                     val inc = Income(
                         id = obj.getString("id"),
-                        profileId = profileId,
+                        profileId = resolvedProfileId,
                         source = IncomeSource.valueOf(obj.getString("source")),
                         title = obj.optString("title", "Income"),
                         amount = BigDecimal(obj.getString("amount")),
@@ -126,7 +171,7 @@ class EncryptedRestoreUseCase @Inject constructor(
                     val obj = expArray.getJSONObject(i)
                     val exp = Expense(
                         id = obj.getString("id"),
-                        profileId = profileId,
+                        profileId = resolvedProfileId,
                         title = obj.getString("title"),
                         amount = BigDecimal(obj.getString("amount")),
                         currency = obj.optString("currency", "INR"),
@@ -149,7 +194,7 @@ class EncryptedRestoreUseCase @Inject constructor(
                     val obj = budArray.getJSONObject(i)
                     val bud = Budget(
                         id = obj.getString("id"),
-                        profileId = profileId,
+                        profileId = resolvedProfileId,
                         type = BudgetType.valueOf(obj.getString("type")),
                         amount = BigDecimal(obj.getString("amount")),
                         categoryId = obj.optString("categoryId", "").ifBlank { null },
@@ -169,7 +214,7 @@ class EncryptedRestoreUseCase @Inject constructor(
                     val currBal = BigDecimal(obj.optString("currentBalance", obj.getString("initialBalance")))
                     val acc = Account(
                         id = obj.getString("id"),
-                        profileId = profileId,
+                        profileId = resolvedProfileId,
                         name = obj.getString("name"),
                         type = AccountType.valueOf(obj.getString("type")),
                         initialBalance = initBal,
@@ -188,7 +233,7 @@ class EncryptedRestoreUseCase @Inject constructor(
                     val obj = recArray.getJSONObject(i)
                     val rec = RecurringExpense(
                         id = obj.getString("id"),
-                        profileId = profileId,
+                        profileId = resolvedProfileId,
                         title = obj.getString("title"),
                         amount = BigDecimal(obj.getString("amount")),
                         categoryId = obj.getString("categoryId"),
@@ -210,11 +255,15 @@ class EncryptedRestoreUseCase @Inject constructor(
                     val obj = sgArray.getJSONObject(i)
                     val goal = SavingsGoal(
                         id = obj.getString("id"),
-                        profileId = profileId,
+                        profileId = resolvedProfileId,
                         name = obj.getString("name"),
                         targetAmount = BigDecimal(obj.getString("targetAmount")),
                         currentAmount = BigDecimal(obj.getString("currentAmount")),
-                        targetDate = obj.getLong("targetDate")
+                        targetDate = obj.getLong("targetDate"),
+                        currency = obj.optString("currency", "INR"),
+                        color = obj.optString("color", "").ifBlank { null },
+                        icon = obj.optString("icon", "").ifBlank { null },
+                        isArchived = obj.optBoolean("isArchived", false)
                     )
                     savingsGoalRepository.createSavingsGoal(goal)
                     goalsRestored++
@@ -227,7 +276,8 @@ class EncryptedRestoreUseCase @Inject constructor(
                     incomesCount = incomesRestored,
                     categoriesCount = categoriesRestored,
                     accountsCount = accountsRestored,
-                    savingsGoalsCount = goalsRestored
+                    savingsGoalsCount = goalsRestored,
+                    restoredProfileId = resolvedProfileId
                 )
             )
         } catch (e: Exception) {

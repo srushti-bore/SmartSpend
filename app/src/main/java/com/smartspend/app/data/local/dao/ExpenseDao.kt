@@ -87,7 +87,7 @@ interface ExpenseDao {
     """)
     fun getCategoryTotalSpendingBetween(profileId: String, categoryId: String, startDate: Long, endDate: Long): Flow<BigDecimal?>
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertExpense(expense: ExpenseEntity)
 
     @Update

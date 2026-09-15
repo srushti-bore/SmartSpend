@@ -38,6 +38,6 @@ class ProfileRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteProfile(id: String) {
-        profileDao.deleteProfileById(id)
+        profileDao.deleteProfileAndAllData(id)
     }
 }

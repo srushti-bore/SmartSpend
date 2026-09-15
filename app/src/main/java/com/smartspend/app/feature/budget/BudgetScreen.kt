@@ -275,8 +275,54 @@ fun BudgetScreen(
                 state.budgetProgressList
             }
 
-            val totalSpent = filteredBudgets.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.spentAmount) }
-            val totalLimit = filteredBudgets.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.budget.amount) }
+            val overallMonthlyBudget = state.budgetProgressList.firstOrNull { it.budget.type == BudgetType.MONTHLY && it.budget.categoryId == null }
+            val overallDailyBudget = state.budgetProgressList.firstOrNull { it.budget.type == BudgetType.DAILY && it.budget.categoryId == null }
+            val categoryBudgetsList = state.budgetProgressList.filter { it.budget.type == BudgetType.CATEGORY || (it.budget.type == BudgetType.MONTHLY && it.budget.categoryId != null) }
+            val overallWeeklyBudget = state.budgetProgressList.firstOrNull { it.budget.type == BudgetType.WEEKLY && it.budget.categoryId == null }
+
+            val (totalLimit, totalSpent, periodLabel) = if (state.selectedFilterType != null) {
+                val spent = filteredBudgets.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.spentAmount) }
+                val limit = filteredBudgets.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.budget.amount) }
+                val label = when (state.selectedFilterType) {
+                    BudgetType.DAILY -> "Daily Expenditure Limit"
+                    BudgetType.WEEKLY -> "Weekly Expenditure Limit"
+                    BudgetType.MONTHLY -> "Monthly Expenditure Limit"
+                    BudgetType.CATEGORY -> "Category Expenditure Limits"
+                    BudgetType.YEARLY -> "Yearly Expenditure Limit"
+                    else -> "Expenditure Limit"
+                }
+                Triple(limit, spent, label)
+            } else {
+                // When "All" is active, prioritize the broader Monthly Fiscal Envelope instead of blindly adding Daily + Monthly
+                when {
+                    overallMonthlyBudget != null -> Triple(
+                        overallMonthlyBudget.budget.amount,
+                        overallMonthlyBudget.spentAmount,
+                        "Monthly Expenditure Limit"
+                    )
+                    categoryBudgetsList.isNotEmpty() -> Triple(
+                        categoryBudgetsList.fold(BigDecimal.ZERO) { acc, it -> acc.add(it.budget.amount) },
+                        categoryBudgetsList.fold(BigDecimal.ZERO) { acc, it -> acc.add(it.spentAmount) },
+                        "Category Budgets Combined"
+                    )
+                    overallWeeklyBudget != null -> Triple(
+                        overallWeeklyBudget.budget.amount,
+                        overallWeeklyBudget.spentAmount,
+                        "Weekly Expenditure Limit"
+                    )
+                    overallDailyBudget != null -> Triple(
+                        overallDailyBudget.budget.amount,
+                        overallDailyBudget.spentAmount,
+                        "Daily Expenditure Limit"
+                    )
+                    else -> Triple(
+                        state.budgetProgressList.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.budget.amount) },
+                        state.budgetProgressList.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.spentAmount) },
+                        "Total Expenditure Limit"
+                    )
+                }
+            }
+
             val totalPercentage = if (totalLimit > BigDecimal.ZERO) {
                 totalSpent.multiply(BigDecimal(100)).divide(totalLimit, 0, java.math.RoundingMode.HALF_EVEN).toInt()
             } else 0
@@ -366,15 +412,6 @@ fun BudgetScreen(
 
                 // 3. MASTER BUDGET SUMMARY SHELF
                 item {
-                    val periodLabel = when (state.selectedFilterType) {
-                        BudgetType.DAILY -> "Daily Expenditure Limit"
-                        BudgetType.WEEKLY -> "Weekly Expenditure Limit"
-                        BudgetType.MONTHLY -> "Monthly Expenditure Limit"
-                        BudgetType.CATEGORY -> "Category Expenditure Limit"
-                        BudgetType.YEARLY -> "Yearly Expenditure Limit"
-                        null -> "Total Expenditure Limit"
-                    }
-
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -410,6 +447,15 @@ fun BudgetScreen(
                                 Text(
                                     text = "of ${MoneyUtils.format(totalLimit, state.preferredCurrency)} limit",
                                     style = MaterialTheme.typography.bodyMedium,
+                                    color = AtelierInkMuted
+                                )
+                            }
+
+                            if (state.selectedFilterType == null && overallDailyBudget != null && overallMonthlyBudget != null) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "• Includes Daily Pacing Limit of ${MoneyUtils.format(overallDailyBudget.budget.amount, state.preferredCurrency)}/day (${MoneyUtils.format(overallDailyBudget.remainingAmount.coerceAtLeast(BigDecimal.ZERO), state.preferredCurrency)} left today)",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                                     color = AtelierInkMuted
                                 )
                             }

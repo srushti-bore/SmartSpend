@@ -28,8 +28,14 @@ import java.io.FileInputStream
 import java.math.BigDecimal
 
 class TestKeystoreManager : KeystoreManager() {
-    override fun encrypt(plainText: String): String = "ENC:$plainText"
-    override fun decrypt(encryptedText: String): String = encryptedText.removePrefix("ENC:")
+    override fun encrypt(plainText: String, password: String?): String = "ENC:${password ?: ""}:$plainText"
+    override fun decrypt(encryptedText: String, password: String?): String {
+        val expectedPrefix = "ENC:${password ?: ""}:"
+        if (!encryptedText.startsWith(expectedPrefix)) {
+            throw IllegalArgumentException("Incorrect backup password. Please check and try again.")
+        }
+        return encryptedText.removePrefix(expectedPrefix)
+    }
 }
 
 class EncryptedBackupUseCaseTest {
@@ -80,6 +86,7 @@ class EncryptedBackupUseCaseTest {
         )
 
         restoreUseCase = EncryptedRestoreUseCase(
+            profileRepository = fakeProfileRepo,
             categoryRepository = fakeCategoryRepo,
             paymentMethodRepository = fakePaymentRepo,
             expenseRepository = fakeExpenseRepo,
@@ -128,7 +135,7 @@ class EncryptedBackupUseCaseTest {
         )
 
         // 2. Perform Backup
-        val backupFile = File(tempFolder.root, "smartspend_test_backup.smartspend")
+        val backupFile = File(tempFolder.root, "expense_backup_2026_09_15.enc")
         val backupResult = backupUseCase.createBackup(profileId, backupFile)
 
         assertTrue(backupResult.isSuccess)
@@ -154,5 +161,102 @@ class EncryptedBackupUseCaseTest {
         val restoredExpense = fakeExpenseRepo.getExpenseById(profileId, "exp_1")
         assertEquals("Biryani", restoredExpense?.title)
         assertEquals(BigDecimal("350.00"), restoredExpense?.amount)
+    }
+
+    @Test
+    fun `fresh APK restore without targetProfileId recreates profile and all ledger entries`() = runBlocking {
+        // 1. Seed source data
+        val initialProfile = Profile(
+            id = "profile_fresh_123",
+            name = "FreshUser",
+            primaryAuthType = AuthType.PASSWORD,
+            credentialSalt = "somesalt",
+            credentialHash = "somehash",
+            biometricEnabled = true,
+            createdAt = 5000L
+        )
+        fakeProfileRepo.createProfile(initialProfile)
+
+        fakeCategoryRepo.addCategory(
+            Category(id = "cat_groceries", profileId = initialProfile.id, name = "Groceries")
+        )
+
+        fakeExpenseRepo.addExpense(
+            Expense(
+                id = "exp_milk",
+                profileId = initialProfile.id,
+                title = "Milk & Bread",
+                amount = BigDecimal("120.00"),
+                categoryId = "cat_groceries",
+                paymentMethodId = "pm_cash",
+                date = 6000L
+            )
+        )
+
+        // 2. Perform Backup
+        val backupFile = File(tempFolder.root, "expense_backup_fresh_test.enc")
+        val backupResult = backupUseCase.createBackup(initialProfile.id, backupFile)
+        assertTrue(backupResult.isSuccess)
+
+        // 3. Simulate Fresh App install (wipe all repos)
+        fakeProfileRepo.deleteProfile(initialProfile.id)
+        fakeCategoryRepo.deleteCategory(initialProfile.id, "cat_groceries")
+        fakeExpenseRepo.deleteExpense(initialProfile.id, "exp_milk")
+
+        // 4. Perform Fresh APK Restore (targetProfileId is null)
+        val restoreResult = FileInputStream(backupFile).use { fis ->
+            restoreUseCase.restoreBackup(fis, targetProfileId = null)
+        }
+
+        assertTrue(restoreResult.isSuccess)
+        val summary = restoreResult.getOrNull()
+        assertEquals(1, summary?.expensesCount)
+        assertEquals(1, summary?.categoriesCount)
+        assertEquals("profile_fresh_123", summary?.restoredProfileId)
+
+        // Verify profile was recreated
+        val restoredProfile = fakeProfileRepo.getProfileById("profile_fresh_123")
+        assertEquals("FreshUser", restoredProfile?.name)
+        assertEquals(AuthType.PASSWORD, restoredProfile?.primaryAuthType)
+
+        // Verify expense was restored
+        val restoredExpense = fakeExpenseRepo.getExpenseById("profile_fresh_123", "exp_milk")
+        assertEquals("Milk & Bread", restoredExpense?.title)
+        assertEquals(BigDecimal("120.00"), restoredExpense?.amount)
+    }
+
+    @Test
+    fun `password-protected backup requires correct password to restore and fails with wrong password`() = runBlocking {
+        val testProfile = Profile(
+            id = "profile_pwd_test",
+            name = "SecretUser",
+            primaryAuthType = AuthType.PASSWORD,
+            credentialSalt = "salt123",
+            credentialHash = "hash123",
+            biometricEnabled = false,
+            createdAt = 7000L
+        )
+        fakeProfileRepo.createProfile(testProfile)
+        fakeCategoryRepo.addCategory(Category(id = "cat_secret", profileId = testProfile.id, name = "Secret Expenses"))
+
+        val backupFile = File(tempFolder.root, "password_protected_backup.enc")
+        val correctPassword = "MyStrongPassword@123"
+        val wrongPassword = "WrongPassword"
+
+        // 1. Export with password
+        val exportResult = backupUseCase.createBackup(testProfile.id, backupFile, password = correctPassword)
+        assertTrue(exportResult.isSuccess)
+
+        // 2. Attempt restore with wrong password -> should fail
+        val wrongRestoreResult = FileInputStream(backupFile).use { fis ->
+            restoreUseCase.restoreBackup(testProfile.id, fis, password = wrongPassword)
+        }
+        assertTrue(wrongRestoreResult.isFailure)
+
+        // 3. Attempt restore with correct password -> should succeed
+        val correctRestoreResult = FileInputStream(backupFile).use { fis ->
+            restoreUseCase.restoreBackup(testProfile.id, fis, password = correctPassword)
+        }
+        assertTrue(correctRestoreResult.isSuccess)
     }
 }

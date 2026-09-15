@@ -82,10 +82,17 @@ app/src/main/java/com/smartspend/app/
 ## Financial Intelligence, Theming & Engine Invariants
 1. **Zero Hallucinations:** Ask SmartSpend engine executes deterministic SQL queries on the user's local Room database and applies mathematical formulas (Safe-to-Spend, 50/30/20 ratio, Health Score). No generative models invent financial numbers.
 2. **Deficit-Tolerant Accounting:** Pacing run-rates, safe daily allowances, and simulation results gracefully handle negative cash flows and budget overruns with explicit advice and warnings.
-3. **Hardware Keystore AES-256 Backups:** `.smartspend` export bundles are encrypted with AES-GCM-256 using key material guarded by the Android Keystore.
+3. **Portable AES-256-GCM Encrypted Backups (`.enc` & `.smartspend`):** Export bundles use PBKDF2-HMAC-SHA256 (65,536 rounds) key derivation with a 16-byte random salt and 12-byte GCM IV envelope (`SPEND_ENC_V2`), ensuring 100% data portability across phone resets, device migrations, and fresh APK installations without hardware Keystore lock-in.
 4. **Cent-Exact Split Math:** Bill splitting uses integer cent remainders assigned to the payer, ensuring `sum(participants) == totalAmount` with zero rounding loss.
 5. **IST Timezone Grace Buffer:** Habit streaks operate in `Asia/Kolkata` with a 24-hour grace window to preserve streaks when transactions are recorded the following morning.
 6. **Multi-Currency Global Formatting:** `MoneyUtils.format()` formats amounts with their currency prefix/symbol according to `PreferencesManager.preferredCurrencyFlow` (`INR`, `USD`, `EUR`, `GBP`).
 7. **Atelier sRGB Pastel System:** Dynamic Light and Dark modes with curated low-strain pastel variants (`Atelier Canvas`, `Lavender Dusk`, `Sage Mist`, `Rose Quartz`, `Slate Navy`).
 8. **Epoch-Accurate Budgeting:** Period filters (`DAILY`, `WEEKLY`, `MONTHLY`, `CATEGORY`, `YEARLY`) span strict timestamps from `00:00:00.000` to `23:59:59.999`.
+9. **Fresh Install Profile & Ledger Restoration:** `EncryptedRestoreUseCase` reconstitutes the user's `Profile`, authentication credentials, active profile pointer in `PreferencesManager`, and all underlying ledger entities from backup directly during onboarding.
+10. **Multi-User Multi-Tenancy Architecture:** Multiple user profiles co-exist on the same device with distinct encryption credentials (PIN, Password, Pattern, Biometrics). All DAOs scope data queries strictly by `profileId` and reactive flows (`PreferencesManager.activeProfileIdFlow`) instantly re-query and re-render the UI across all screens when switching users.
+11. **Secure FileProvider Storage Sharing:** `androidx.core.content.FileProvider` is configured with `file_paths.xml` under authority `${applicationId}.fileprovider`, enabling sandboxed sharing of encrypted `.enc`/`.smartspend` backup files and PDF financial statements via Android Share Sheet.
+12. **Idempotent Room DAO Restores:** All Room DAO `insert` operations utilize `OnConflictStrategy.REPLACE` to guarantee crash-free and collision-free database restorations and multi-tenant ledger synchronization.
+13. **Dynamic Zero-Hardcoding AI Architecture:** All Gemini AI intelligence flows operate strictly under user control via a master `isAiEnabled` toggle. API keys are stored in encrypted `DataStore` preferences entered by the user in Settings, eliminating hardcoded keys across the codebase and preventing unauthorized API access.
+14. **Harmonized Multi-Period Budget Aggregation:** The budget calculation separates major budget period envelopes (e.g. Monthly) from daily pacing limits to prevent arithmetic inflation (e.g. summing ₹60,000 Monthly + ₹2,000 Daily into ₹62,000). The primary overarching limit anchors the card, with sub-period pacing rendered as itemized context.
+
 

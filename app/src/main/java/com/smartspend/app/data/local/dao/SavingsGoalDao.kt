@@ -20,7 +20,7 @@ interface SavingsGoalDao {
     @Query("SELECT * FROM savings_goals WHERE profileId = :profileId AND id = :id LIMIT 1")
     suspend fun getSavingsGoalById(profileId: String, id: String): SavingsGoalEntity?
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSavingsGoal(goal: SavingsGoalEntity)
 
     @Update

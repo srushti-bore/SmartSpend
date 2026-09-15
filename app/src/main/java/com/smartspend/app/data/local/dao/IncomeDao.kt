@@ -49,7 +49,7 @@ interface IncomeDao {
     """)
     fun getIncomeSourceAggregatesBetween(profileId: String, startDate: Long, endDate: Long): Flow<List<IncomeSourceSpendAggregate>>
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertIncome(income: IncomeEntity)
 
     @Update

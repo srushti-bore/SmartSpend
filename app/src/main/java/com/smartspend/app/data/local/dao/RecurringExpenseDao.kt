@@ -23,7 +23,7 @@ interface RecurringExpenseDao {
     @Query("SELECT * FROM recurring_expenses WHERE isActive = 1 AND nextDueDate <= :cutoffDate")
     suspend fun getDueRecurringExpenses(cutoffDate: Long): List<RecurringExpenseEntity>
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecurringExpense(recurringExpense: RecurringExpenseEntity)
 
     @Update

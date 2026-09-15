@@ -6,7 +6,9 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.smartspend.app.core.common.BackupStorageHelper
 import com.smartspend.app.core.datastore.PreferencesManager
+import com.smartspend.app.core.security.KeystoreManager
 import com.smartspend.app.data.local.dao.CategorySpendAggregate
 import com.smartspend.app.domain.model.AuthType
 import com.smartspend.app.domain.model.Category
@@ -23,6 +25,8 @@ import com.smartspend.app.domain.usecase.backup.EncryptedBackupUseCase
 import com.smartspend.app.domain.usecase.backup.EncryptedRestoreUseCase
 import com.smartspend.app.domain.usecase.backup.RestoreSummary
 import com.smartspend.app.domain.usecase.export.ExportTransactionsUseCase
+import com.smartspend.app.domain.usecase.profile.CreateProfileUseCase
+import com.smartspend.app.domain.usecase.profile.DeleteProfileUseCase
 import com.smartspend.app.domain.usecase.profile.UpdateProfileCredentialUseCase
 import com.smartspend.app.domain.usecase.profile.WipeDataUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -56,12 +60,6 @@ data class DonutChartSegment(
 )
 
 data class SettingsUiState(
-    // Active Profile & Preferences
-    val activeProfile: Profile? = null,
-    val themeMode: String = "SYSTEM",
-    val preferredCurrency: String = "INR",
-    val activeSectionTab: String = "ALL",
-
     // Section 1: Display & Region
     val dateFormat: String = "YYYY-MM-DD",
 
@@ -94,6 +92,24 @@ data class SettingsUiState(
     val backupErrorMessage: String? = null,
     val backupSuccessMessage: String? = null,
     val lastBackupTimestamp: Long? = null,
+    val isExportPasswordDialogOpen: Boolean = false,
+    val exportPasswordInput: String = "",
+    val exportConfirmPasswordInput: String = "",
+    val exportPasswordErrorMessage: String? = null,
+    val pendingExportAction: com.smartspend.app.feature.backup.ExportActionType? = null,
+    val pendingDestinationUri: Uri? = null,
+    val isRestorePasswordDialogOpen: Boolean = false,
+    val restorePasswordInput: String = "",
+    val restorePasswordErrorMessage: String? = null,
+    val pendingRestoreUri: Uri? = null,
+
+    // Section: AI Intelligence & Gemini API
+    val isAiEnabled: Boolean = false,
+    val hasGeminiApiKey: Boolean = false,
+    val geminiApiKeyInput: String = "",
+    val isGeminiKeyVisible: Boolean = false,
+    val aiErrorMessage: String? = null,
+    val aiSuccessMessage: String? = null,
 
     // Section 5: Notifications
     val dailyReminderEnabled: Boolean = true,
@@ -123,7 +139,23 @@ data class SettingsUiState(
     // Metadata & Reference Maps
     val categoriesMap: Map<String, Category> = emptyMap(),
     val paymentMethodsMap: Map<String, PaymentMethod> = emptyMap(),
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+
+    // Profile Management
+    val activeProfile: Profile? = null,
+    val allProfiles: List<Profile> = emptyList(),
+    val isAddProfileDialogOpen: Boolean = false,
+    val newProfileName: String = "",
+    val newProfileAuthType: AuthType = AuthType.PIN,
+    val newProfileCredential: String = "",
+    val newProfileConfirmCredential: String = "",
+    val newProfileBiometric: Boolean = true,
+    val newProfileErrorMessage: String? = null,
+    val isCreatingProfile: Boolean = false,
+    val profileToDelete: Profile? = null,
+    val themeMode: String = "SYSTEM",
+    val preferredCurrency: String = "INR",
+    val activeSectionTab: String = "ALL"
 )
 
 @HiltViewModel
@@ -135,10 +167,13 @@ class SettingsViewModel @Inject constructor(
     private val paymentMethodRepository: PaymentMethodRepository,
     private val preferencesManager: PreferencesManager,
     private val updateProfileCredentialUseCase: UpdateProfileCredentialUseCase,
+    private val createProfileUseCase: CreateProfileUseCase,
+    private val deleteProfileUseCase: DeleteProfileUseCase,
     private val wipeDataUseCase: WipeDataUseCase,
     private val encryptedBackupUseCase: EncryptedBackupUseCase,
     private val encryptedRestoreUseCase: EncryptedRestoreUseCase,
-    private val exportTransactionsUseCase: ExportTransactionsUseCase
+    private val exportTransactionsUseCase: ExportTransactionsUseCase,
+    private val keystoreManager: KeystoreManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -162,6 +197,13 @@ class SettingsViewModel @Inject constructor(
             historyMonthTitle = monthTitle
         )
 
+        // Observe All Profiles
+        viewModelScope.launch {
+            profileRepository.getAllProfiles().collect { profiles ->
+                _uiState.value = _uiState.value.copy(allProfiles = profiles)
+            }
+        }
+
         // Observe Preferences
         viewModelScope.launch {
             preferencesManager.themeModeFlow.collect { theme ->
@@ -172,6 +214,18 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.preferredCurrencyFlow.collect { currency ->
                 _uiState.value = _uiState.value.copy(preferredCurrency = currency)
+            }
+        }
+
+        viewModelScope.launch {
+            preferencesManager.aiEnabledFlow.collect { enabled ->
+                _uiState.value = _uiState.value.copy(isAiEnabled = enabled)
+            }
+        }
+
+        viewModelScope.launch {
+            preferencesManager.encryptedGeminiApiKeyFlow.collect { encKey ->
+                _uiState.value = _uiState.value.copy(hasGeminiApiKey = !encKey.isNullOrBlank())
             }
         }
 
@@ -394,6 +448,145 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // ==========================================
+    // MULTI-USER PROFILES MANAGEMENT
+    // ==========================================
+    fun switchProfile(profileId: String) {
+        viewModelScope.launch {
+            preferencesManager.setActiveProfileId(profileId)
+            val profile = profileRepository.getProfileById(profileId)
+            _uiState.value = _uiState.value.copy(
+                activeProfile = profile,
+                selectedAuthType = profile?.primaryAuthType ?: AuthType.PIN,
+                pinSuccessMessage = "Switched to ${profile?.name ?: "Profile"}"
+            )
+        }
+    }
+
+    fun openAddProfileDialog() {
+        _uiState.value = _uiState.value.copy(
+            isAddProfileDialogOpen = true,
+            newProfileName = "",
+            newProfileAuthType = AuthType.PIN,
+            newProfileCredential = "",
+            newProfileConfirmCredential = "",
+            newProfileBiometric = true,
+            newProfileErrorMessage = null,
+            isCreatingProfile = false
+        )
+    }
+
+    fun closeAddProfileDialog() {
+        _uiState.value = _uiState.value.copy(isAddProfileDialogOpen = false, newProfileErrorMessage = null)
+    }
+
+    fun onNewProfileNameChange(name: String) {
+        _uiState.value = _uiState.value.copy(newProfileName = name, newProfileErrorMessage = null)
+    }
+
+    fun onNewProfileAuthTypeSelected(type: AuthType) {
+        _uiState.value = _uiState.value.copy(
+            newProfileAuthType = type,
+            newProfileCredential = "",
+            newProfileConfirmCredential = "",
+            newProfileErrorMessage = null
+        )
+    }
+
+    fun onNewProfileCredentialChange(cred: String) {
+        _uiState.value = _uiState.value.copy(newProfileCredential = cred, newProfileErrorMessage = null)
+    }
+
+    fun onNewProfileConfirmCredentialChange(confirm: String) {
+        _uiState.value = _uiState.value.copy(newProfileConfirmCredential = confirm, newProfileErrorMessage = null)
+    }
+
+    fun onNewProfileBiometricToggle(enabled: Boolean) {
+        _uiState.value = _uiState.value.copy(newProfileBiometric = enabled)
+    }
+
+    fun createNewProfile() {
+        val state = _uiState.value
+        val name = state.newProfileName.trim()
+        val cred = state.newProfileCredential.trim()
+        val confirm = state.newProfileConfirmCredential.trim()
+
+        if (name.isEmpty()) {
+            _uiState.value = state.copy(newProfileErrorMessage = "Please enter profile name")
+            return
+        }
+        if (cred.isEmpty()) {
+            _uiState.value = state.copy(newProfileErrorMessage = "Please set a credential")
+            return
+        }
+        if (cred.length < 4) {
+            _uiState.value = state.copy(newProfileErrorMessage = "${state.newProfileAuthType.name} must be at least 4 characters")
+            return
+        }
+        if (cred != confirm) {
+            _uiState.value = state.copy(newProfileErrorMessage = "Credentials do not match")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = state.copy(isCreatingProfile = true, newProfileErrorMessage = null)
+            val result = createProfileUseCase(
+                name = name,
+                authType = state.newProfileAuthType,
+                rawCredential = cred,
+                biometricEnabled = state.newProfileBiometric
+            )
+
+            result.fold(
+                onSuccess = { created ->
+                    preferencesManager.setActiveProfileId(created.id)
+                    _uiState.value = _uiState.value.copy(
+                        isAddProfileDialogOpen = false,
+                        isCreatingProfile = false,
+                        activeProfile = created,
+                        pinSuccessMessage = "Created profile '${created.name}' and activated"
+                    )
+                },
+                onFailure = { err ->
+                    _uiState.value = _uiState.value.copy(
+                        isCreatingProfile = false,
+                        newProfileErrorMessage = err.localizedMessage ?: "Failed to create profile"
+                    )
+                }
+            )
+        }
+    }
+
+    fun confirmDeleteProfile(profile: Profile) {
+        _uiState.value = _uiState.value.copy(profileToDelete = profile)
+    }
+
+    fun dismissDeleteProfile() {
+        _uiState.value = _uiState.value.copy(profileToDelete = null)
+    }
+
+    fun executeDeleteProfile() {
+        val target = _uiState.value.profileToDelete ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, profileToDelete = null)
+            val result = deleteProfileUseCase(target.id)
+            result.fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        pinSuccessMessage = "Deleted profile '${target.name}'"
+                    )
+                },
+                onFailure = { err ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        pinErrorMessage = err.localizedMessage ?: "Failed to delete profile"
+                    )
+                }
+            )
+        }
+    }
+
     fun openDeleteAccountDialog() {
         _uiState.value = _uiState.value.copy(isDeleteAccountDialogOpen = true)
     }
@@ -419,8 +612,76 @@ class SettingsViewModel @Inject constructor(
 
     // ==========================================
     // 4. DATA & BACKUP (SRS PHASE 5)
-    // ==========================================
-    fun exportEncryptedBackup(context: Context) {
+    fun generateBackupFileName(): String {
+        val timeStamp = SimpleDateFormat("yyyy_MM_dd", Locale.getDefault()).format(Date())
+        return "expense_backup_$timeStamp.enc"
+    }
+
+    fun openExportPasswordDialog(actionType: com.smartspend.app.feature.backup.ExportActionType, destinationUri: Uri? = null) {
+        _uiState.value = _uiState.value.copy(
+            isExportPasswordDialogOpen = true,
+            exportPasswordInput = "",
+            exportConfirmPasswordInput = "",
+            exportPasswordErrorMessage = null,
+            pendingExportAction = actionType,
+            pendingDestinationUri = destinationUri
+        )
+    }
+
+    fun closeExportPasswordDialog() {
+        _uiState.value = _uiState.value.copy(
+            isExportPasswordDialogOpen = false,
+            exportPasswordErrorMessage = null,
+            pendingExportAction = null,
+            pendingDestinationUri = null
+        )
+    }
+
+    fun onExportPasswordChange(pwd: String) {
+        _uiState.value = _uiState.value.copy(exportPasswordInput = pwd, exportPasswordErrorMessage = null)
+    }
+
+    fun onExportConfirmPasswordChange(confirm: String) {
+        _uiState.value = _uiState.value.copy(exportConfirmPasswordInput = confirm, exportPasswordErrorMessage = null)
+    }
+
+    fun confirmAndExecuteExport(context: Context) {
+        val state = _uiState.value
+        val pwd = state.exportPasswordInput.trim()
+        val confirm = state.exportConfirmPasswordInput.trim()
+
+        if (pwd.isEmpty()) {
+            _uiState.value = state.copy(exportPasswordErrorMessage = "Please set a backup encryption password")
+            return
+        }
+        if (pwd.length < 4) {
+            _uiState.value = state.copy(exportPasswordErrorMessage = "Password must be at least 4 characters")
+            return
+        }
+        if (pwd != confirm) {
+            _uiState.value = state.copy(exportPasswordErrorMessage = "Passwords do not match")
+            return
+        }
+
+        val action = state.pendingExportAction ?: com.smartspend.app.feature.backup.ExportActionType.SAVE_TO_DOWNLOADS
+        val uri = state.pendingDestinationUri
+
+        _uiState.value = state.copy(isExportPasswordDialogOpen = false)
+
+        when (action) {
+            com.smartspend.app.feature.backup.ExportActionType.SAVE_TO_URI -> {
+                if (uri != null) saveEncryptedBackupToUri(context, uri, pwd)
+            }
+            com.smartspend.app.feature.backup.ExportActionType.SAVE_TO_DOWNLOADS -> {
+                downloadEncryptedBackup(context, pwd)
+            }
+            com.smartspend.app.feature.backup.ExportActionType.SHARE -> {
+                shareEncryptedBackup(context, pwd)
+            }
+        }
+    }
+
+    fun saveEncryptedBackupToUri(context: Context, destinationUri: Uri, password: String) {
         val profileId = activeProfileId ?: return
 
         viewModelScope.launch {
@@ -431,19 +692,29 @@ class SettingsViewModel @Inject constructor(
                 backupFileCreated = null
             )
 
-            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val backupFile = File(context.cacheDir, "smartspend_backup_$timeStamp.smartspend")
+            val fileName = generateBackupFileName()
+            val backupFile = File(context.cacheDir, fileName)
 
-            val result = encryptedBackupUseCase.createBackup(profileId, backupFile)
+            val result = encryptedBackupUseCase.createBackup(profileId, backupFile, password)
             result.fold(
                 onSuccess = { file ->
-                    _uiState.value = _uiState.value.copy(
-                        isExportingBackup = false,
-                        backupFileCreated = file,
-                        lastBackupTimestamp = System.currentTimeMillis(),
-                        backupSuccessMessage = "Encrypted backup file created (${file.length() / 1024} KB). Sharing..."
+                    val saveResult = BackupStorageHelper.saveToUri(context, file, destinationUri)
+                    saveResult.fold(
+                        onSuccess = {
+                            _uiState.value = _uiState.value.copy(
+                                isExportingBackup = false,
+                                backupFileCreated = file,
+                                lastBackupTimestamp = System.currentTimeMillis(),
+                                backupSuccessMessage = "✓ Successfully downloaded and saved to your device"
+                            )
+                        },
+                        onFailure = { err ->
+                            _uiState.value = _uiState.value.copy(
+                                isExportingBackup = false,
+                                backupErrorMessage = "Failed to save file: ${err.message}"
+                            )
+                        }
                     )
-                    shareBackupFile(context, file)
                 },
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(
@@ -455,8 +726,111 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun restoreFromBackupFile(context: Context, uri: Uri) {
+    fun downloadEncryptedBackup(context: Context, password: String? = null) {
         val profileId = activeProfileId ?: return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isExportingBackup = true,
+                backupErrorMessage = null,
+                backupSuccessMessage = null,
+                backupFileCreated = null
+            )
+
+            val fileName = generateBackupFileName()
+            val backupFile = File(context.cacheDir, fileName)
+
+            val result = encryptedBackupUseCase.createBackup(profileId, backupFile, password)
+            result.fold(
+                onSuccess = { file ->
+                    val saveResult = BackupStorageHelper.saveToDownloads(context, file, fileName)
+                    saveResult.fold(
+                        onSuccess = { path ->
+                            _uiState.value = _uiState.value.copy(
+                                isExportingBackup = false,
+                                backupFileCreated = file,
+                                lastBackupTimestamp = System.currentTimeMillis(),
+                                backupSuccessMessage = "✓ Successfully saved to $path (Notification sent)"
+                            )
+                        },
+                        onFailure = { err ->
+                            _uiState.value = _uiState.value.copy(
+                                isExportingBackup = false,
+                                backupErrorMessage = "Failed to save to Downloads: ${err.message}"
+                            )
+                        }
+                    )
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isExportingBackup = false,
+                        backupErrorMessage = error.localizedMessage ?: "Failed to export encrypted backup"
+                    )
+                }
+            )
+        }
+    }
+
+    fun shareEncryptedBackup(context: Context, password: String? = null) {
+        val profileId = activeProfileId ?: return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isExportingBackup = true,
+                backupErrorMessage = null,
+                backupSuccessMessage = null,
+                backupFileCreated = null
+            )
+
+            val fileName = generateBackupFileName()
+            val backupFile = File(context.cacheDir, fileName)
+
+            val result = encryptedBackupUseCase.createBackup(profileId, backupFile, password)
+            result.fold(
+                onSuccess = { file ->
+                    _uiState.value = _uiState.value.copy(
+                        isExportingBackup = false,
+                        backupFileCreated = file,
+                        lastBackupTimestamp = System.currentTimeMillis(),
+                        backupSuccessMessage = "Encrypted backup file created (${file.length() / 1024} KB). Opening share sheet..."
+                    )
+                    BackupStorageHelper.shareFile(context, file, "Share SmartSpend Backup")
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isExportingBackup = false,
+                        backupErrorMessage = error.localizedMessage ?: "Failed to export encrypted backup"
+                    )
+                }
+            )
+        }
+    }
+
+    fun onRestoreFilePicked(context: Context, uri: Uri) {
+        _uiState.value = _uiState.value.copy(
+            isRestorePasswordDialogOpen = true,
+            restorePasswordInput = "",
+            restorePasswordErrorMessage = null,
+            pendingRestoreUri = uri
+        )
+    }
+
+    fun closeRestorePasswordDialog() {
+        _uiState.value = _uiState.value.copy(
+            isRestorePasswordDialogOpen = false,
+            restorePasswordErrorMessage = null,
+            pendingRestoreUri = null
+        )
+    }
+
+    fun onRestorePasswordChange(pwd: String) {
+        _uiState.value = _uiState.value.copy(restorePasswordInput = pwd, restorePasswordErrorMessage = null)
+    }
+
+    fun executeRestoreWithPassword(context: Context) {
+        val profileId = activeProfileId ?: return
+        val uri = _uiState.value.pendingRestoreUri ?: return
+        val password = _uiState.value.restorePasswordInput.trim()
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -471,49 +845,37 @@ class SettingsViewModel @Inject constructor(
                 if (inputStream == null) {
                     _uiState.value = _uiState.value.copy(
                         isRestoringBackup = false,
-                        backupErrorMessage = "Could not read backup file"
+                        restorePasswordErrorMessage = "Could not read backup file"
                     )
                     return@launch
                 }
 
-                val result = encryptedRestoreUseCase.restoreBackup(profileId, inputStream)
+                val result = encryptedRestoreUseCase.restoreBackup(profileId, inputStream, password)
                 result.fold(
                     onSuccess = { summary ->
                         _uiState.value = _uiState.value.copy(
                             isRestoringBackup = false,
+                            isRestorePasswordDialogOpen = false,
                             restoreSummary = summary,
                             backupSuccessMessage = "Restored ${summary.expensesCount} expenses & ${summary.incomesCount} incomes successfully."
                         )
-                        // Refresh data
                         loadAnalyticsData(profileId, _uiState.value.analyticsTimeframe)
                         loadTransactionHistory(profileId, _uiState.value.historySelectedYear, _uiState.value.historySelectedMonth)
                     },
                     onFailure = { error ->
                         _uiState.value = _uiState.value.copy(
                             isRestoringBackup = false,
-                            backupErrorMessage = "Restore failed: ${error.localizedMessage ?: error.message}"
+                            restorePasswordErrorMessage = error.localizedMessage ?: "Incorrect password or invalid file"
                         )
                     }
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isRestoringBackup = false,
-                    backupErrorMessage = e.localizedMessage ?: "Failed to restore backup"
+                    restorePasswordErrorMessage = e.localizedMessage ?: "Failed to restore backup"
                 )
             }
         }
-    }
-
-    private fun shareBackupFile(context: Context, file: File) {
-        try {
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "application/octet-stream"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(Intent.createChooser(intent, "Save Encrypted SmartSpend Backup"))
-        } catch (_: Exception) {}
     }
 
     // ==========================================
@@ -854,5 +1216,101 @@ class SettingsViewModel @Inject constructor(
                 }
             )
         }
+    }
+
+    // ==========================================
+    // 8. AI FEATURES & GEMINI API CONFIGURATION
+    // ==========================================
+    fun toggleAiEnabled() {
+        viewModelScope.launch {
+            val currentState = _uiState.value
+            if (!currentState.isAiEnabled) {
+                // Trying to enable
+                if (!currentState.hasGeminiApiKey) {
+                    _uiState.value = currentState.copy(
+                        aiErrorMessage = "Please configure and save your Google Gemini API Key below before enabling AI features.",
+                        aiSuccessMessage = null
+                    )
+                    return@launch
+                }
+                preferencesManager.setAiEnabled(true)
+                _uiState.value = _uiState.value.copy(
+                    isAiEnabled = true,
+                    aiSuccessMessage = "✓ AI features enabled across SmartSpend.",
+                    aiErrorMessage = null
+                )
+            } else {
+                preferencesManager.setAiEnabled(false)
+                _uiState.value = _uiState.value.copy(
+                    isAiEnabled = false,
+                    aiSuccessMessage = "AI features disabled.",
+                    aiErrorMessage = null
+                )
+            }
+        }
+    }
+
+    fun onGeminiApiKeyChange(input: String) {
+        _uiState.value = _uiState.value.copy(geminiApiKeyInput = input, aiErrorMessage = null, aiSuccessMessage = null)
+    }
+
+    fun toggleGeminiKeyVisibility() {
+        _uiState.value = _uiState.value.copy(isGeminiKeyVisible = !_uiState.value.isGeminiKeyVisible)
+    }
+
+    fun saveGeminiApiKey() {
+        val key = _uiState.value.geminiApiKeyInput.trim()
+        if (key.isEmpty()) {
+            _uiState.value = _uiState.value.copy(
+                aiErrorMessage = "Gemini API key cannot be blank",
+                aiSuccessMessage = null
+            )
+            return
+        }
+        if (key.length < 10) {
+            _uiState.value = _uiState.value.copy(
+                aiErrorMessage = "Please enter a valid Gemini API key (typically starts with AIza...)",
+                aiSuccessMessage = null
+            )
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val encryptedKey = keystoreManager.encrypt(key)
+                preferencesManager.setEncryptedGeminiApiKey(encryptedKey)
+                preferencesManager.setAiEnabled(true)
+                _uiState.value = _uiState.value.copy(
+                    geminiApiKeyInput = "",
+                    hasGeminiApiKey = true,
+                    isAiEnabled = true,
+                    aiSuccessMessage = "✓ Gemini API Key encrypted with AES-256 and saved safely. AI features are now active!",
+                    aiErrorMessage = null
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    aiErrorMessage = "Failed to encrypt and save API key: ${e.message}",
+                    aiSuccessMessage = null
+                )
+            }
+        }
+    }
+
+    fun clearGeminiApiKey() {
+        viewModelScope.launch {
+            preferencesManager.setEncryptedGeminiApiKey(null)
+            preferencesManager.setAiEnabled(false)
+            _uiState.value = _uiState.value.copy(
+                geminiApiKeyInput = "",
+                hasGeminiApiKey = false,
+                isAiEnabled = false,
+                aiSuccessMessage = "Gemini API Key removed. AI features disabled.",
+                aiErrorMessage = null
+            )
+        }
+    }
+
+    fun clearAiMessages() {
+        _uiState.value = _uiState.value.copy(aiErrorMessage = null, aiSuccessMessage = null)
     }
 }

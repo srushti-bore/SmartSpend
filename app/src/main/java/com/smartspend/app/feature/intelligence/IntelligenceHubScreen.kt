@@ -1,6 +1,7 @@
 package com.smartspend.app.feature.intelligence
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,7 +22,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Chat
@@ -30,7 +33,6 @@ import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,12 +41,14 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -63,20 +67,28 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.smartspend.app.core.money.MoneyUtils
+import com.smartspend.app.core.ui.components.AtelierPillBadge
 import com.smartspend.app.core.ui.components.LoadingState
 import com.smartspend.app.core.ui.components.VisualMoodMascot
-import com.smartspend.app.core.ui.theme.BrandAccent
-import com.smartspend.app.core.ui.theme.BrandPrimary
-import com.smartspend.app.core.ui.theme.PastelBlue
-import com.smartspend.app.core.ui.theme.PastelGreen
-import com.smartspend.app.core.ui.theme.PastelPink
-import com.smartspend.app.core.ui.theme.PastelPurple
-import com.smartspend.app.core.ui.theme.PastelYellow
-import com.smartspend.app.core.ui.theme.StatusDanger
-import com.smartspend.app.core.ui.theme.StatusSuccess
-import com.smartspend.app.core.ui.theme.StatusWarning
+import com.smartspend.app.core.ui.theme.AtelierAmber
+import com.smartspend.app.core.ui.theme.AtelierAmberSubtle
+import com.smartspend.app.core.ui.theme.AtelierCanvas
+import com.smartspend.app.core.ui.theme.AtelierCoral
+import com.smartspend.app.core.ui.theme.AtelierCoralSubtle
+import com.smartspend.app.core.ui.theme.AtelierHairline
+import com.smartspend.app.core.ui.theme.AtelierInkMuted
+import com.smartspend.app.core.ui.theme.AtelierLavender
+import com.smartspend.app.core.ui.theme.AtelierLavenderSubtle
+import com.smartspend.app.core.ui.theme.AtelierPeriwinkle
+import com.smartspend.app.core.ui.theme.AtelierPeriwinkleSubtle
+import com.smartspend.app.core.ui.theme.AtelierPrimaryInk
+import com.smartspend.app.core.ui.theme.AtelierSage
+import com.smartspend.app.core.ui.theme.AtelierSageSubtle
+import com.smartspend.app.core.ui.theme.AtelierSurfaceChalk
+import com.smartspend.app.core.ui.theme.NewsreaderFontFamily
 import com.smartspend.app.domain.intelligence.LeakSeverity
 import com.smartspend.app.domain.intelligence.SafeSpendTier
 import com.smartspend.app.domain.intelligence.SimulationDecision
@@ -92,7 +104,6 @@ fun IntelligenceHubScreen(
 
     var simTitleInput by remember { mutableStateOf("") }
     var simAmountInput by remember { mutableStateOf("") }
-    var showSimulatorDialog by remember { mutableStateOf(false) }
 
     if (uiState.isLoading) {
         LoadingState(message = "Analyzing financial intelligence...")
@@ -100,33 +111,62 @@ fun IntelligenceHubScreen(
     }
 
     Scaffold(
+        containerColor = AtelierCanvas,
         topBar = {
             TopAppBar(
-                title = { Text("AI Financial Intelligence", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        text = "AI Financial Intelligence",
+                        fontFamily = NewsreaderFontFamily,
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = AtelierPrimaryInk
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = AtelierPrimaryInk,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = onNavigateToAskAi) {
-                        Icon(imageVector = Icons.Default.Chat, contentDescription = "Ask AI", tint = BrandPrimary)
+                        Icon(
+                            imageVector = Icons.Default.Chat,
+                            contentDescription = "Ask AI",
+                            tint = AtelierAmber,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AtelierCanvas)
             )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToAskAi,
-                containerColor = BrandPrimary,
-                contentColor = Color.Black,
-                shape = CircleShape
+                containerColor = AtelierAmber,
+                contentColor = Color.White,
+                shape = CircleShape,
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
             ) {
-                Row(modifier = Modifier.padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Ask AI", fontWeight = FontWeight.Bold)
+                Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Chat,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Ask AI",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 }
             }
         }
@@ -134,7 +174,7 @@ fun IntelligenceHubScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(AtelierCanvas)
                 .padding(paddingValues)
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -154,12 +194,11 @@ fun IntelligenceHubScreen(
             // 2. Financial Health Score Bento Card (0 - 100)
             uiState.healthReport?.let { health ->
                 item {
-                    Card(
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        )
+                        shape = RoundedCornerShape(12.dp),
+                        color = AtelierSurfaceChalk,
+                        border = BorderStroke(1.dp, AtelierHairline)
                     ) {
                         Column(modifier = Modifier.padding(18.dp)) {
                             Row(
@@ -170,12 +209,16 @@ fun IntelligenceHubScreen(
                                 Column {
                                     Text(
                                         text = "Financial Health Score",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                        fontFamily = NewsreaderFontFamily,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AtelierPrimaryInk
                                     )
+                                    Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = health.summaryTitle,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                        color = AtelierInkMuted
                                     )
                                 }
 
@@ -183,24 +226,43 @@ fun IntelligenceHubScreen(
                                 Surface(
                                     shape = CircleShape,
                                     color = when (health.grade) {
-                                        "A+", "A" -> StatusSuccess
-                                        "B" -> Color(0xFF4CD7F6)
-                                        "C" -> StatusWarning
-                                        else -> StatusDanger
+                                        "A+", "A" -> AtelierSageSubtle
+                                        "B" -> AtelierPeriwinkleSubtle
+                                        "C" -> AtelierAmberSubtle
+                                        else -> AtelierCoralSubtle
                                     },
-                                    modifier = Modifier.size(54.dp)
+                                    border = BorderStroke(
+                                        1.dp,
+                                        when (health.grade) {
+                                            "A+", "A" -> AtelierSage
+                                            "B" -> AtelierPeriwinkle
+                                            "C" -> AtelierAmber
+                                            else -> AtelierCoral
+                                        }
+                                    ),
+                                    modifier = Modifier.size(52.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(
                                                 text = "${health.overallScore}",
                                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                                color = Color.Black
+                                                color = when (health.grade) {
+                                                    "A+", "A" -> AtelierSage
+                                                    "B" -> AtelierPeriwinkle
+                                                    "C" -> AtelierAmber
+                                                    else -> AtelierCoral
+                                                }
                                             )
                                             Text(
                                                 text = health.grade,
-                                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                                color = Color.Black
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.ExtraBold),
+                                                color = when (health.grade) {
+                                                    "A+", "A" -> AtelierSage
+                                                    "B" -> AtelierPeriwinkle
+                                                    "C" -> AtelierAmber
+                                                    else -> AtelierCoral
+                                                }
                                             )
                                         }
                                     }
@@ -216,27 +278,35 @@ fun IntelligenceHubScreen(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        Text(text = pillar.name, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
-                                        Text(text = "${pillar.score}/20 • ${pillar.status}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(text = pillar.name, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = AtelierPrimaryInk)
+                                        Text(text = "${pillar.score}/20 • ${pillar.status}", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = AtelierInkMuted)
                                     }
                                     Spacer(modifier = Modifier.height(3.dp))
                                     LinearProgressIndicator(
-                                        progress = pillar.score.toFloat() / 20f,
+                                        progress = { pillar.score.toFloat() / 20f },
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(6.dp)
                                             .clip(RoundedCornerShape(3.dp)),
-                                        color = BrandPrimary,
-                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                        color = AtelierAmber,
+                                        trackColor = AtelierHairline
                                     )
                                 }
                             }
 
                             if (health.actionRecommendations.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(12.dp))
-                                Text(text = "Top Action Recommendation:", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                                Text(
+                                    text = "Top Action Recommendation:",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = AtelierPrimaryInk
+                                )
                                 Spacer(modifier = Modifier.height(2.dp))
-                                Text(text = "👉 ${health.actionRecommendations.first()}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    text = "👉 ${health.actionRecommendations.first()}",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                    color = AtelierInkMuted
+                                )
                             }
                         }
                     }
@@ -246,63 +316,70 @@ fun IntelligenceHubScreen(
             // 3. Safe-to-Spend Speedometer Card
             uiState.safeToSpend?.let { safe ->
                 item {
-                    Card(
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        shape = RoundedCornerShape(12.dp),
+                        color = AtelierSurfaceChalk,
+                        border = BorderStroke(1.dp, AtelierHairline)
                     ) {
                         Column(modifier = Modifier.padding(18.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Shield, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.Shield, contentDescription = null, tint = AtelierSage, modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "Safe-to-Spend Run-Rate",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                    fontFamily = NewsreaderFontFamily,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AtelierPrimaryInk
                                 )
                             }
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Surface(
-                                    shape = RoundedCornerShape(14.dp),
-                                    color = BrandPrimary.copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = AtelierSageSubtle,
+                                    border = BorderStroke(1.dp, AtelierSage.copy(alpha = 0.3f)),
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
-                                        Text("Daily Limit", style = MaterialTheme.typography.labelSmall, color = BrandPrimary)
+                                        Text("Daily Allowance", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = AtelierSage)
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = "₹${safe.safeDailySpend}",
                                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                            color = BrandPrimary
+                                            color = AtelierSage
                                         )
                                     }
                                 }
 
                                 Surface(
-                                    shape = RoundedCornerShape(14.dp),
-                                    color = PastelBlue.copy(alpha = 0.35f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = AtelierPeriwinkleSubtle,
+                                    border = BorderStroke(1.dp, AtelierPeriwinkle.copy(alpha = 0.3f)),
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
-                                        Text("Weekly Limit", style = MaterialTheme.typography.labelSmall)
+                                        Text("Weekly Allowance", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = AtelierPeriwinkle)
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = "₹${safe.safeWeeklySpend}",
-                                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                            color = AtelierPeriwinkle
                                         )
                                     }
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
                             Text(
                                 text = safe.pacingAdvice,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                color = AtelierInkMuted
                             )
                         }
                     }
@@ -311,18 +388,25 @@ fun IntelligenceHubScreen(
 
             // 4. Purchase Simulator Trigger Card
             item {
-                Card(
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    shape = RoundedCornerShape(12.dp),
+                    color = AtelierSurfaceChalk,
+                    border = BorderStroke(1.dp, AtelierHairline)
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Calculate, contentDescription = null, tint = PastelYellow, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.Calculate, contentDescription = null, tint = AtelierAmber, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = "Purchase Simulator (\"Can I afford this?\")", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            Text(
+                                text = "Purchase Simulator (\"Can I afford this?\")",
+                                fontFamily = NewsreaderFontFamily,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AtelierPrimaryInk
+                            )
                         }
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -333,7 +417,13 @@ fun IntelligenceHubScreen(
                                 onValueChange = { simTitleInput = it },
                                 placeholder = { Text("Item (e.g. Shoes)", style = MaterialTheme.typography.bodySmall) },
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = AtelierAmber,
+                                    unfocusedBorderColor = AtelierHairline,
+                                    focusedTextColor = AtelierPrimaryInk,
+                                    unfocusedTextColor = AtelierPrimaryInk
+                                ),
                                 singleLine = true
                             )
                             OutlinedTextField(
@@ -341,61 +431,59 @@ fun IntelligenceHubScreen(
                                 onValueChange = { simAmountInput = it },
                                 placeholder = { Text("₹ Amount", style = MaterialTheme.typography.bodySmall) },
                                 modifier = Modifier.weight(0.8f),
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = AtelierAmber,
+                                    unfocusedBorderColor = AtelierHairline,
+                                    focusedTextColor = AtelierPrimaryInk,
+                                    unfocusedTextColor = AtelierPrimaryInk
+                                ),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 singleLine = true
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         Button(
                             onClick = { viewModel.simulatePurchase(simTitleInput, simAmountInput) },
                             enabled = simAmountInput.isNotBlank(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AtelierAmber,
+                                contentColor = Color.White
+                            ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Simulate Affordability", color = Color.Black, fontWeight = FontWeight.Bold)
+                            Text("Simulate Affordability", color = Color.White, fontWeight = FontWeight.Bold)
                         }
 
                         // Simulation Result Display
                         uiState.simulationResult?.let { result ->
                             Spacer(modifier = Modifier.height(14.dp))
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(
-                                        when (result.decision) {
-                                            SimulationDecision.SAFE_TO_BUY -> StatusSuccess.copy(alpha = 0.12f)
-                                            SimulationDecision.PROCEED_WITH_CAUTION -> StatusWarning.copy(alpha = 0.12f)
-                                            SimulationDecision.DELAY_PURCHASE -> StatusDanger.copy(alpha = 0.12f)
-                                        }
-                                    )
-                                    .border(
-                                        1.dp,
-                                        when (result.decision) {
-                                            SimulationDecision.SAFE_TO_BUY -> StatusSuccess.copy(alpha = 0.5f)
-                                            SimulationDecision.PROCEED_WITH_CAUTION -> StatusWarning.copy(alpha = 0.5f)
-                                            SimulationDecision.DELAY_PURCHASE -> StatusDanger.copy(alpha = 0.5f)
-                                        },
-                                        RoundedCornerShape(12.dp)
-                                    )
-                                    .padding(12.dp)
+                            val (bgColor, borderColor, textColor) = when (result.decision) {
+                                SimulationDecision.SAFE_TO_BUY -> Triple(AtelierSageSubtle, AtelierSage, AtelierSage)
+                                SimulationDecision.PROCEED_WITH_CAUTION -> Triple(AtelierAmberSubtle, AtelierAmber, AtelierAmber)
+                                SimulationDecision.DELAY_PURCHASE -> Triple(AtelierCoralSubtle, AtelierCoral, AtelierCoral)
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = bgColor,
+                                border = BorderStroke(1.dp, borderColor),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column {
+                                Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
                                         text = result.verdictTitle,
                                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = when (result.decision) {
-                                            SimulationDecision.SAFE_TO_BUY -> StatusSuccess
-                                            SimulationDecision.PROCEED_WITH_CAUTION -> StatusWarning
-                                            SimulationDecision.DELAY_PURCHASE -> StatusDanger
-                                        }
+                                        color = textColor
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(text = result.explanation, style = MaterialTheme.typography.bodySmall)
+                                    Text(
+                                        text = result.explanation,
+                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                        color = AtelierPrimaryInk
+                                    )
                                 }
                             }
                         }
@@ -406,65 +494,82 @@ fun IntelligenceHubScreen(
             // 5. Spend Forecast & 50/30/20 Ratio
             uiState.forecastReport?.let { forecast ->
                 item {
-                    Card(
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        shape = RoundedCornerShape(12.dp),
+                        color = AtelierSurfaceChalk,
+                        border = BorderStroke(1.dp, AtelierHairline)
                     ) {
                         Column(modifier = Modifier.padding(18.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = PastelGreen, modifier = Modifier.size(20.dp))
+                                Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = AtelierSage, modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Spend Forecast & 50/30/20 Ratio", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                Text(
+                                    text = "Spend Forecast & 50/30/20 Ratio",
+                                    fontFamily = NewsreaderFontFamily,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AtelierPrimaryInk
+                                )
                             }
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = forecast.summaryMessage, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                text = forecast.summaryMessage,
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                color = AtelierInkMuted
+                            )
 
                             Spacer(modifier = Modifier.height(14.dp))
 
                             // 50/30/20 Breakdown Bars
                             val split = forecast.rule503020
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Needs (Target 50%): ${String.format("%.1f", split.needsPct)}%", style = MaterialTheme.typography.labelSmall)
-                                Text("₹${split.needsAmount}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                Text("Needs (Target 50%): ${String.format("%.1f", split.needsPct)}%", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = AtelierPrimaryInk)
+                                Text("₹${split.needsAmount}", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), fontWeight = FontWeight.Bold, color = AtelierPrimaryInk)
                             }
+                            Spacer(modifier = Modifier.height(2.dp))
                             LinearProgressIndicator(
-                                progress = (split.needsPct / 100f).toFloat().coerceIn(0f, 1f),
+                                progress = { (split.needsPct / 100f).toFloat().coerceIn(0f, 1f) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp)
                                     .clip(RoundedCornerShape(3.dp)),
-                                color = PastelBlue
+                                color = AtelierPeriwinkle,
+                                trackColor = AtelierHairline
                             )
 
                             Spacer(modifier = Modifier.height(8.dp))
 
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Wants (Target 30%): ${String.format("%.1f", split.wantsPct)}%", style = MaterialTheme.typography.labelSmall)
-                                Text("₹${split.wantsAmount}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                Text("Wants (Target 30%): ${String.format("%.1f", split.wantsPct)}%", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = AtelierPrimaryInk)
+                                Text("₹${split.wantsAmount}", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), fontWeight = FontWeight.Bold, color = AtelierPrimaryInk)
                             }
+                            Spacer(modifier = Modifier.height(2.dp))
                             LinearProgressIndicator(
-                                progress = (split.wantsPct / 100f).toFloat().coerceIn(0f, 1f),
+                                progress = { (split.wantsPct / 100f).toFloat().coerceIn(0f, 1f) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp)
                                     .clip(RoundedCornerShape(3.dp)),
-                                color = PastelPink
+                                color = AtelierCoral,
+                                trackColor = AtelierHairline
                             )
 
                             Spacer(modifier = Modifier.height(8.dp))
 
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Savings (Target 20%): ${String.format("%.1f", split.savingsPct)}%", style = MaterialTheme.typography.labelSmall)
-                                Text("₹${split.savingsAmount}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                Text("Savings (Target 20%): ${String.format("%.1f", split.savingsPct)}%", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = AtelierPrimaryInk)
+                                Text("₹${split.savingsAmount}", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), fontWeight = FontWeight.Bold, color = AtelierPrimaryInk)
                             }
+                            Spacer(modifier = Modifier.height(2.dp))
                             LinearProgressIndicator(
-                                progress = (split.savingsPct / 100f).toFloat().coerceIn(0f, 1f),
+                                progress = { (split.savingsPct / 100f).toFloat().coerceIn(0f, 1f) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp)
                                     .clip(RoundedCornerShape(3.dp)),
-                                color = BrandPrimary
+                                color = AtelierSage,
+                                trackColor = AtelierHairline
                             )
                         }
                     }
@@ -474,26 +579,38 @@ fun IntelligenceHubScreen(
             // 6. Leak Hunter Report
             uiState.leakReport?.let { leaks ->
                 item {
-                    Card(
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        shape = RoundedCornerShape(12.dp),
+                        color = AtelierSurfaceChalk,
+                        border = BorderStroke(1.dp, AtelierHairline)
                     ) {
                         Column(modifier = Modifier.padding(18.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Search, contentDescription = null, tint = StatusWarning, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.Search, contentDescription = null, tint = AtelierAmber, modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Leak Hunter", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                Text(
+                                    text = "Leak Hunter",
+                                    fontFamily = NewsreaderFontFamily,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AtelierPrimaryInk
+                                )
                             }
                             Spacer(modifier = Modifier.height(6.dp))
-                            Text(text = leaks.headline, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                text = leaks.headline,
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                color = AtelierInkMuted
+                            )
 
                             if (leaks.leaksFound.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(10.dp))
                                 leaks.leaksFound.forEach { leak ->
                                     Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.surface,
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = AtelierCanvas,
+                                        border = BorderStroke(1.dp, AtelierHairline),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp)
@@ -503,16 +620,24 @@ fun IntelligenceHubScreen(
                                                 imageVector = Icons.Default.WarningAmber,
                                                 contentDescription = null,
                                                 tint = when (leak.severity) {
-                                                    LeakSeverity.HIGH -> StatusDanger
-                                                    LeakSeverity.MEDIUM -> StatusWarning
-                                                    LeakSeverity.LOW -> PastelBlue
+                                                    LeakSeverity.HIGH -> AtelierCoral
+                                                    LeakSeverity.MEDIUM -> AtelierAmber
+                                                    LeakSeverity.LOW -> AtelierPeriwinkle
                                                 },
                                                 modifier = Modifier.size(18.dp)
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Column {
-                                                Text(text = "${leak.title} (₹${leak.totalAmount})", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold))
-                                                Text(text = leak.explanation, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text(
+                                                    text = "${leak.title} (₹${leak.totalAmount})",
+                                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                                    color = AtelierPrimaryInk
+                                                )
+                                                Text(
+                                                    text = leak.explanation,
+                                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                                    color = AtelierInkMuted
+                                                )
                                             }
                                         }
                                     }
